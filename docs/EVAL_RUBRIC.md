@@ -24,27 +24,38 @@ different scores.
 
 ## Tier 1: Deterministic assertions
 
-Each of the 16 cases in `golden_cases.json` is a customer message plus a set of these
-checks (usage counts across the current 16 cases):
+Each of the 18 cases in `golden_cases.json` is a customer message plus a set of these
+checks (usage counts across the current 18 cases):
 
 | Field | Checks | Used in |
 |---|---|---|
-| `expected_outcome` | The `respond` tool's `outcome` matches exactly (`answered` \| `needs_clarification` \| `escalate` \| `out_of_scope`) | 16/16 (always required) |
-| `tools_must_include` | Every named tool appears in the actual tool-call trace | 13/16 |
-| `message_must_contain_any` | For each listed group, at least one term from that group appears (case-insensitive) — used for "the model must convey X, in whatever wording" | 10/16 |
-| `message_must_not_contain` | None of the listed terms appear — catches wrong claims or leaked adversarial content | 6/16 |
-| `tools_must_not_include` | The named tool was never called — proves scope discipline (e.g. no account tool touched for an out-of-scope request) | 4/16 |
-| `must_cite_doc` | An `evidence[].source` entry references this doc ID | 3/16 |
-| `caveats_required` | The `caveats[]` array is non-empty (excluding internal/system caveats) | 3/16 |
-| `escalation_must_include` | Named fields in `escalation_draft` are present and non-empty | 3/16 |
-| `escalation_guide_id` | `escalation_draft.guide_id` matches exactly | 2/16 |
-| `message_must_contain` | Every listed term appears (all required, not "any") | 1/16 |
+| `expected_outcome` | The `respond` tool's `outcome` matches exactly (`answered` \| `needs_clarification` \| `escalate` \| `out_of_scope`) | 18/18 (always required) |
+| `tools_must_include` | Every named tool appears in the actual tool-call trace | 13/18 |
+| `message_must_contain_any` | For each listed group, at least one term from that group appears (case-insensitive) — used for "the model must convey X, in whatever wording" | 10/18 |
+| `message_must_not_contain` | None of the listed terms appear — catches wrong claims or leaked adversarial content | 6/18 |
+| `tools_must_not_include` | The named tool was never called — proves scope discipline (e.g. no account tool touched for an out-of-scope request) | 6/18 |
+| `must_cite_doc` | An `evidence[].source` entry references this doc ID | 3/18 |
+| `caveats_required` | The `caveats[]` array is non-empty (excluding internal/system caveats) | 3/18 |
+| `escalation_must_include` | Named fields in `escalation_draft` are present and non-empty | 3/18 |
+| `escalation_guide_id` | `escalation_draft.guide_id` matches exactly | 2/18 |
+| `message_must_contain` | Every listed term appears (all required, not "any") | 1/18 |
 
-**`expected_outcome` distribution across the set:** 9 `answered`, 3 `escalate`, 2
-`needs_clarification`, 2 `out_of_scope`. This isn't balanced by design for its own
+**`expected_outcome` distribution across the set:** 9 `answered`, 3 `escalate`, 3
+`needs_clarification`, 3 `out_of_scope`. This isn't balanced by design for its own
 sake — it reflects the actual shape of the problem: most requests should resolve, a
 meaningful minority should escalate or ask a question, and scope violations should be
 rare but must be caught every time.
+
+### Where `small_talk_not_diagnosis` came from
+
+Every other case in this set was written in advance, hypothesizing failure modes.
+This one wasn't — it was found live, by a person manually testing the UI, asking "how
+are you doing?" and watching the agent break its own tool-calling contract and
+escalate a greeting to a human. That's the golden-set sourcing loop this rubric argues
+for elsewhere (production behavior → observed failure → labeled case → added to the
+set) actually happening once, inside this same build, not just described as a future
+practice. See `docs/DECISION_LOG.md` #4 for the full account, including why the
+guardrail catching it cleanly wasn't the same thing as the behavior being correct.
 
 ### Why substring matching, not a judge, for message content
 
@@ -64,7 +75,7 @@ accepted, documented tradeoff for this prototype, not a hidden gap.
 `caveats_required` and `escalation_must_include` are checkable *at all* only because
 the `respond` tool schema puts uncertainty and escalation content in their own typed
 fields, separate from `message`. This is the single design decision that makes the
-"conflict & ambiguity" category — the largest category, 7 of 16 cases — assertable
+"conflict & ambiguity" category — the largest category, 8 of 18 cases — assertable
 instead of a matter of opinion about whether some sentence "sounds sufficiently
 hedged." See `docs/DECISION_LOG.md` #9.
 
@@ -135,7 +146,7 @@ of the same calibration work.
 
 - **Numeric/statistical significance of the pass rate.** `evals/run_evals.py --repeat
   N` reports a raw per-case pass rate across N runs; it doesn't compute a confidence
-  interval. At 16 cases and small N, that precision wouldn't be meaningful — the
+  interval. At 18 cases and small N, that precision wouldn't be meaningful — the
   point of `--repeat` here is to make "was that one run representative?" answerable at
   all, not to produce a publishable statistic.
 - **Adversarial coverage beyond one injection vector.** `prompt_injection_in_data`

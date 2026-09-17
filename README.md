@@ -26,6 +26,10 @@ does it with visible evidence, explicit uncertainty, and a real escalation path.
   would read.
 - **Ticket creation is a local JSON file** ([`data/tickets.json`](data/tickets.json)),
   not a real ticketing system integration.
+- **The UI's visual language is inspired by Pendo's real brand** — checked live
+  against pendo.io (hot-pink/magenta primary color, "Sora" display typeface, warm
+  cream background) — but the logo mark is an original shape for "Acme," not a copy
+  of Pendo's actual logo or wordmark.
 
 ## The problem
 
@@ -70,7 +74,7 @@ production optimization, not a flaw in choosing an agent for the rest.
    invent a fact to fill the gap.
 4. Escalation as a real workflow — a structured packet the model drafts, a human
    confirms, and only then does code create a ticket.
-5. A 16-case golden set with deterministic assertions on outcome, tool selection, and
+5. An 18-case golden set with deterministic assertions on outcome, tool selection, and
    groundedness — including 8 cases specifically about ambiguous or conflicting data,
    not just the happy path.
 
@@ -111,7 +115,7 @@ FastAPI (server.py) — in-memory sessions, JSONL trace log
    │
    ▼
 Agent loop (app/agent.py, hand-written, ~100 lines)
-  Claude Sonnet 5 · tool_choice: auto · strict tool schemas · adaptive thinking
+  Claude Sonnet 5 · forced tool_choice · strict tool schemas · adaptive thinking
   (never displayed/stored) · hard 8-step cap
    │
    ├─ get_guide(name_or_id)        ┐
@@ -132,12 +136,15 @@ evidence panel and the eval's deterministic assertions possible. `outcome` and
 `caveats` are structured fields the code can branch on and the evals can assert
 against, not adjectives the code would have to parse out of prose.
 
-**Why `tool_choice: "auto"` and not a forced `"any"`:** avoids any dependency on
-forced-tool-choice model-specific behavior, at the cost of needing a code-level
-guardrail: if the model ever ends a turn without calling a tool (breaking the
-contract), the agent loop treats that as a failure and returns a synthetic
-`escalate` response rather than surfacing raw, ungoverned model text to the customer.
-See `_contract_violation_result` in [`app/agent.py`](app/agent.py).
+**Why `tool_choice` is forced (`"any"`), not `"auto"`:** this started as `"auto"` plus
+a prompt instruction, to avoid depending on forced-tool-choice behavior being stable
+across models. Real testing falsified that caution faster than it justified it — with
+`"auto"`, the model twice replied in plain text instead of calling `respond` (once for
+small talk, once for a clarifying question), both caught by a fail-closed guardrail
+but not actually correct behavior. Forcing tool use removes the failure at its source.
+The guardrail (`_contract_violation_result` in [`app/agent.py`](app/agent.py)) stays
+regardless, for the cases forcing tool choice can't cover (an API failure, or a future
+model that doesn't support forced tool use the same way). See Decision Log #4.
 
 ## Trust and grounding
 
@@ -170,7 +177,7 @@ python evals/run_evals.py --repeat 5 # run every case 5x, report a per-case PASS
 
 `--repeat` isn't a hypothetical "production would do this" — it's a real, working measurement of run-to-run variance, because that variance showed up empirically while building this (see Decision Log #11) and a single pass/fail was the wrong way to report it.
 
-16 golden cases across four categories:
+18 golden cases across four categories:
 
 - **Diagnosis (4)** — the core value: multi-hop reasoning that actually resolves the
   ticket.
@@ -179,9 +186,12 @@ python evals/run_evals.py --repeat 5 # run every case 5x, report a per-case PASS
   estimate that predates a rule change, a mixed diagnostic-and-write-request message.
   This is deliberately the largest category — "does it behave correctly when the
   situation *isn't* clean" is a stronger quality signal than another happy-path case.
-- **Escalation (1)** and **scope & safety (3)** — correct escalation with a useful
-  packet, refusing billing/write requests, and resisting an instruction injected into
-  guide data returned by a tool.
+- **Scope & safety (6)** — correct escalation with a useful packet, refusing
+  billing/write requests, resisting an instruction injected into guide data returned
+  by a tool, and declining small talk instead of chatting or (as briefly happened
+  during manual testing) breaking the response contract entirely — see
+  `small_talk_not_diagnosis` in the golden set and Decision Log #4 for what that
+  looked like and how it was fixed.
 
 Each case makes deterministic assertions: expected `outcome`, which tools must (or
 must not) be called, required substrings, whether a specific doc must be cited, and

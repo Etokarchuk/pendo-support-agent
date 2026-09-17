@@ -201,44 +201,26 @@ TOOL_SCHEMAS = [
         "input_schema": {
             "type": "object",
             "properties": {
-                "outcome": {
-                    "type": "string",
-                    "enum": ["answered", "needs_clarification", "escalate", "out_of_scope"],
-                    "description": (
-                        "answered: you diagnosed the issue or answered a how-to question. Use "
-                        "this even when the message ALSO contains an out-of-scope ask (billing, "
-                        "or a request to change a setting) as long as it contains a real "
-                        "diagnostic question too — do the diagnosis, decline the rest inline. "
-                        "needs_clarification: the request is ambiguous or under-specified — "
-                        "you asked a question instead of guessing. "
-                        "escalate: you could not resolve this with the tools available "
-                        "(everything checked out healthy, or a required check failed) and "
-                        "a human needs to take it. "
-                        "out_of_scope: the ENTIRE request is something this agent doesn't "
-                        "handle — billing/refunds, or asking only to change a setting with no "
-                        "diagnostic question attached. If there's no diagnosis to do, don't "
-                        "call any account-data tool first."
-                    ),
-                },
-                "message": {
-                    "type": "string",
-                    "description": "The customer-facing message. Plain language, no internal jargon.",
-                },
                 "evidence": {
                     "type": "array",
                     "description": (
                         "Every factual claim in `message` that came from a tool or doc "
                         "result, with its source. Empty array only for needs_clarification "
-                        "or out_of_scope, where no facts were used."
+                        "or out_of_scope, where no facts were used. Every `source` and `fact` "
+                        "must be a real, specific value from an actual tool result you "
+                        "received this turn (an ID, a status, a count, a doc's real content) "
+                        "— never a placeholder, a generic label, or filler text of any kind. "
+                        "If you cannot name the real source and fact for a claim, do not "
+                        "include that claim in `message` either."
                     ),
                     "items": {
                         "type": "object",
                         "properties": {
                             "source": {
                                 "type": "string",
-                                "description": "e.g. 'get_guide(G-1001)', 'get_segment(SEG-20)', 'doc:segments-and-eligibility'.",
+                                "description": "The exact tool call or doc this came from, e.g. 'get_guide(G-1001)', 'get_segment(SEG-20)', 'doc:segments-and-eligibility' — never a placeholder.",
                             },
-                            "fact": {"type": "string", "description": "The specific fact taken from that source."},
+                            "fact": {"type": "string", "description": "The specific real fact taken from that source (an actual value, not a placeholder)."},
                         },
                         "required": ["source", "fact"],
                         "additionalProperties": False,
@@ -273,8 +255,35 @@ TOOL_SCHEMAS = [
                     "required": ["summary", "guide_id", "checks_performed", "unresolved_reason"],
                     "additionalProperties": False,
                 },
+                "message": {
+                    "type": "string",
+                    "description": "The customer-facing message. Plain language, no internal jargon.",
+                },
+                "outcome": {
+                    "type": "string",
+                    "enum": ["answered", "needs_clarification", "escalate", "out_of_scope"],
+                    "description": (
+                        "Fill this in LAST, after evidence/caveats/escalation_draft/message above — "
+                        "it must be a faithful summary of what you just wrote, not a decision made "
+                        "before working through the rest. If escalation_draft is non-null, outcome "
+                        "must be 'escalate'; they can never disagree. "
+                        "answered: you diagnosed the issue or answered a how-to question. Use "
+                        "this even when the message ALSO contains an out-of-scope ask (billing, "
+                        "or a request to change a setting) as long as it contains a real "
+                        "diagnostic question too — do the diagnosis, decline the rest inline. "
+                        "needs_clarification: the request is ambiguous or under-specified — "
+                        "you asked a question instead of guessing. "
+                        "escalate: you could not resolve this with the tools available "
+                        "(everything checked out healthy, or a required check failed) and "
+                        "a human needs to take it. "
+                        "out_of_scope: the ENTIRE request is something this agent doesn't "
+                        "handle — billing/refunds, or asking only to change a setting with no "
+                        "diagnostic question attached. If there's no diagnosis to do, don't "
+                        "call any account-data tool first."
+                    ),
+                },
             },
-            "required": ["outcome", "message", "evidence", "caveats", "escalation_draft"],
+            "required": ["evidence", "caveats", "escalation_draft", "message", "outcome"],
             "additionalProperties": False,
         },
     },

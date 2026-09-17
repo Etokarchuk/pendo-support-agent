@@ -38,7 +38,7 @@ conflicting data, escalation) rather than a shallow slice of many request types.
 
 **Why:** "Handles customer service requests" invites breadth; breadth without a
 golden set is unfalsifiable — you can't define "correct" for an open-ended bot, so
-quality collapses to vibes. Depth lets me write 16 assertable golden cases instead of
+quality collapses to vibes. Depth lets me write 17 assertable golden cases instead of
 demoing ten happy paths. It also mirrors the real tradeoff a support product has to
 make: a broad agent at 60% accuracy is worse than a narrow one at 95%, because one
 confidently wrong answer costs more trust than ten correct "I can't help with that."
@@ -92,31 +92,65 @@ argument, including "why not LangGraph specifically."
 
 ---
 
-## 4. `tool_choice: "auto"` + strict schemas + a `respond` tool, not forced `"any"`
+## 4. Forced `tool_choice: "any"`, strict schemas, a `respond` tool — reversed from `"auto"` based on real testing
 
-**Decision:** Every tool call is optional per the API (`tool_choice: auto`); the
-contract "always end by calling `respond`" is enforced by the system prompt and by
-code that treats a tool-less turn as a failure, not by forcing tool use at the API
-level.
+**Decision:** Every model call forces `tool_choice: {"type": "any"}` — the model must
+call some tool every turn, ending with `respond`. This is a reversal from the initial
+design (`"auto"` plus a prompt instruction), made because real testing, not
+speculation, showed `"auto"` wasn't reliable enough.
 
-**Why:** this avoids depending on forced-tool-choice semantics being available and
-stable across models, while `strict: true` on every schema still guarantees
-schema-valid arguments whenever a tool *is* called. The cost is a code-level guardrail
-requiring a fallback path — which I wanted anyway, because "the model didn't follow
-instructions" needs to fail closed for a customer-facing agent regardless of how tool
-choice is configured.
+**Why the initial choice, and why it changed:** `"auto"` was chosen first specifically
+to avoid depending on forced-tool-choice behavior being available and stable across
+model versions (a real, documented constraint on some models). The theory was that
+`strict: true` schemas plus an explicit system-prompt instruction ("call `respond`
+exactly once, as your last action") would be enough, backed by a code-level guardrail
+for the rare case it wasn't.
 
-**Alternative considered:** forcing tool use every turn. Simpler in principle, but
-makes the fallback path (`_contract_violation_result`) untested by construction, which
-is exactly the path I most want to have proven out for a trust-sensitive prototype.
+That guardrail then did its job for real, twice, during manual UI testing — and both
+times revealed the same underlying problem. A customer typed "how are you doing?" and
+the model replied in plain text instead of calling `respond`; another typed "My guide
+is not showing" and the model wrote its clarifying question ("which guide do you
+mean?") as plain conversational text instead of calling `respond(outcome=
+"needs_clarification", ...)`. In both cases the guardrail caught the contract
+violation and returned a clean fail-closed `escalate` response instead of a crash or
+raw ungoverned text — but "escalating a greeting to a human" is a jarring, wrong
+product outcome, not just an internal near-miss. A caught contract violation isn't the
+same thing as correct behavior.
 
-**Tradeoff:** a small amount of possible waste if the model occasionally ends a turn
-without a tool call for a benign reason — in practice this hasn't been observed in
-testing, and the fallback (escalate, not a broken UI) is an acceptable failure mode
-either way.
+The first instinct was to patch the prompt for each scenario as it was found (and that
+did work for both, confirmed by repeated re-testing) — but finding the *same*
+underlying failure via two unrelated conversational patterns in one afternoon of
+manual testing was the signal that this was systemic, not two unrelated edge cases:
+whenever the model's natural inclination was to produce something that felt like an
+ordinary conversational reply, it sometimes skipped the tool-call contract regardless
+of how the prompt was worded. At that point, continuing to patch prompt wording for
+each new "feels conversational" scenario as it was discovered would have been chasing
+a symptom. Forcing `tool_choice: "any"` removes the failure mode at its source instead
+of only catching it after the fact — verified empirically that Sonnet 5 supports
+forced tool choice without error before switching (the model-compatibility concern
+that motivated "auto" in the first place applies to a narrower set of newer models,
+not this one).
+
+**Alternative considered:** keep `"auto"` and keep patching the prompt per scenario.
+Rejected once the pattern repeated — see above. Two golden cases now exist
+specifically because of this (`small_talk_not_diagnosis`, `clarifying_question_not_
+diagnosis`), both re-verified clean under forced `tool_choice`.
+
+**Tradeoff:** forcing tool use removes the model's ability to ever answer with a bare
+`end_turn` — which is exactly the point, since this agent should never do that — at
+the cost of one degree of flexibility a more open-ended assistant might want. The
+fail-closed guardrail (`_contract_violation_result`) stays regardless: forcing tool
+choice doesn't protect against an API failure, a step-cap timeout, or a future model
+swap that doesn't support forced tool choice the same way — it removes one specific,
+now-verified failure mode, not the entire category.
 
 **Production implication:** keep the guardrail regardless of `tool_choice` strategy —
-it's cheap insurance for a customer-facing surface.
+it's cheap insurance for a customer-facing surface, and this incident is exactly why:
+even the "fixed" version needs a safety net for whatever the *next* undiscovered
+pattern turns out to be. Re-verify forced tool_choice support explicitly on any future
+model swap rather than assuming it carries over — this skill's own documentation notes
+newer model families (Claude Fable 5.1 at the time of writing) have already dropped
+support for it.
 
 ---
 
@@ -291,7 +325,7 @@ assertion type checks, the complete judge criteria, and the calibration gap. Thi
 entry covers the decision to split evaluation this way; that doc covers the rubric
 itself.)*
 
-**Decision:** `evals/run_evals.py` runs each of 16 golden cases once, asserts
+**Decision:** `evals/run_evals.py` runs each of 17 golden cases once, asserts
 structured outcomes deterministically, and only optionally adds an LLM-judge quality
 score that never gates pass/fail.
 
@@ -351,3 +385,63 @@ threshold, investigate flaky cases individually rather than re-running until gre
 Source the golden set on an ongoing basis from production escalations, support-agent
 feedback on wrong answers, and known failure modes — not just hand-authored cases like
 this one.
+
+---
+
+## 12. `respond` schema field order, and a worked example, to fix an outcome/content decoupling
+
+**Decision:** the `respond` tool's JSON schema generates `evidence`, `caveats`, and
+`escalation_draft` before `outcome` (previously `outcome` was first); the escalation
+rule in the system prompt now includes one concrete worked example, not just the
+abstract rule.
+
+**Why:** live testing found a precise, reproducible bug — the model would correctly
+recognize a case needed escalation (filling `escalation_draft` completely and
+accurately) while leaving `outcome` set to `"answered"`. Since tool-call JSON is
+generated as one continuous token stream with no revision, and `outcome` was the
+*first* field in the schema, the model was committing to a label before it had
+articulated the reasoning that would have changed that label. Moving `outcome` to be
+generated last measurably fixed one case (`tool_error_no_guess`: unreliable → 100%
+correct across repeated testing) but only partially fixed another
+(`healthy_guide_escalate`: went from 0/2 to 4/6). The remaining gap closed after
+adding one concrete worked example mirroring that exact scenario (6/6 after). The
+abstract rule alone wasn't enough for a judgment this inferential — no crisp signal
+like a tool error to hang the decision on, and the customer's own words ("everything
+looks fine on our end") plausibly nudged the model toward a reassuring framing.
+
+**Alternative considered:** keep iterating on rule wording alone. Rejected once field
+order was identified as a likely mechanistic cause — a structural fix beats another
+round of prompt-wording tweaks when there's a concrete reason to expect it will
+generalize better.
+
+**Tradeoff:** none identified — this is a pure reliability improvement with no
+observed downside, verified by re-running the full golden set (no regressions).
+
+**Production implication:** field order in a structured-output schema is a real,
+underappreciated lever for output reliability, not just a stylistic choice — put
+fields that inform a judgment before the field that states the judgment.
+
+---
+
+## 13. Prompt caching on the system prompt + tool schemas
+
+**Decision:** the system prompt (rendered together with the static `TOOL_SCHEMAS`,
+per the API's tools → system → messages render order) carries a `cache_control:
+{"type": "ephemeral"}` breakpoint.
+
+**Why:** both are fully static within this single-account prototype — the system
+prompt only varies by account name/ID, and there's one account. Every multi-step
+customer turn (typically 2-5 model calls) was paying full input-token price for the
+same ~2K-token prefix on every step. This wasn't in the original build because a
+single quick manual test doesn't surface a caching gap — it took a real cost
+concern (see below) to prompt checking for it.
+
+**Verified, not assumed:** a single live call showed the pattern directly — step 1 of
+a 3-step turn wrote ~5,000 tokens to cache; steps 2 and 3 read that same ~5,000 tokens
+from cache instead of paying input price for them again.
+
+**Production implication:** this is the correct, minimal caching strategy for this
+prototype's shape (one account, static prompt/tools). Production would extend it if
+the system prompt ever varies per request (e.g., per-tenant instructions) — the fix
+there is a stable *shared* prefix with cache_control, with per-tenant content appended
+after the breakpoint, not caching abandoned altogether.

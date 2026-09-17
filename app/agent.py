@@ -8,14 +8,19 @@ docs/DECISION_LOG.md for the tradeoff.
 
 Design choices worth noting on first read:
 
-- tool_choice is "auto", not a forced "any". Every tool schema is strict:true
-  and the system prompt states the contract explicitly ("call respond exactly
-  once, as your last action"). This avoids relying on forced-tool-choice
-  semantics across model versions and puts one behavior in the model's hands
-  we then verify in code: if it ever produces a plain-text final answer
-  instead of calling `respond`, that is treated as a contract violation and
-  the turn fails closed to an escalation (see _contract_violation_result) —
-  never surfaced to the customer as an ungoverned answer.
+- tool_choice is forced ("any"), not "auto". This started as "auto" plus a
+  prompt instruction, on the theory that forcing tool use might not be
+  portable across model versions. Real testing falsified that theory faster
+  than it justified it: with "auto", the model twice produced a plain-text
+  reply instead of calling `respond` — once for small talk ("how are you
+  doing?"), once for a clarifying question ("which guide do you mean?") —
+  both caught by the fail-closed guardrail below, but a caught contract
+  violation isn't the same as correct behavior. Forcing tool_choice removes
+  the failure mode at its source instead of only catching it after the fact.
+  The guardrail (_contract_violation_result) stays regardless — an API
+  failure or an empty tool_use list from a future model swap still needs
+  somewhere to fail closed to. See docs/DECISION_LOG.md #4 for the full
+  before/after account.
 - Thinking is left on (adaptive, the model's default) but never displayed —
   we never read or store `thinking` blocks. The requirement from the product
   brief is "never store hidden chain-of-thought," not "never think"; adaptive
@@ -106,6 +111,28 @@ def _execute_tool(name: str, tool_input: dict) -> tuple[dict, bool]:
     return result, bool(isinstance(result, dict) and result.get("error"))
 
 
+def _fix_double_escaped_whitespace(value):
+    """The model occasionally double-escapes whitespace inside a tool call's
+    JSON arguments — writing the literal two characters '\n' instead of an
+    actual newline (confirmed via character-code inspection, not guessed: the
+    string contains chars 92,110 — backslash, 'n' — not char 10). This is a
+    known artifact of LLM-generated tool-call JSON, not something the prompt
+    controls. By the time a value reaches here, the API's own JSON parser has
+    already correctly unescaped everything once — a literal backslash-n
+    substring surviving that can only be this artifact, never a customer's or
+    our own intentional text, so normalizing it is safe. Applied to every
+    string in the model's `respond` input (recursively, since `evidence` and
+    `escalation_draft` nest further strings) so the UI, the trace log, and
+    eval substring assertions all see clean text, not just one consumer."""
+    if isinstance(value, str):
+        return value.replace("\\n", "\n").replace("\\t", "\t")
+    if isinstance(value, list):
+        return [_fix_double_escaped_whitespace(v) for v in value]
+    if isinstance(value, dict):
+        return {k: _fix_double_escaped_whitespace(v) for k, v in value.items()}
+    return value
+
+
 def run_turn(history: list, user_message: str, account_name: str, account_id: str) -> TurnResult:
     """Run one customer turn to completion: send the message, execute any
     tool calls the model makes, and keep going until it calls `respond` (or a
@@ -123,9 +150,17 @@ def run_turn(history: list, user_message: str, account_name: str, account_id: st
             response = client.messages.create(
                 model=MODEL,
                 max_tokens=MAX_TOKENS,
-                system=system,
+                # Cached: render order is tools -> system -> messages, so a
+                # breakpoint on the system block covers both the (static)
+                # tool schemas and the (static, single-account) system prompt
+                # in one cached prefix. Only `messages` varies per call. This
+                # cuts the repeated-prefix cost by ~90% on cache hits — see
+                # docs/DECISION_LOG.md for why this wasn't in the original
+                # build (a single-account demo has no session-reuse pattern
+                # a prototype naturally exercises) and what surfaced the gap.
+                system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
                 tools=TOOL_SCHEMAS,
-                tool_choice={"type": "auto"},
+                tool_choice={"type": "any"},
                 output_config={"effort": EFFORT},
                 messages=messages,
             )
@@ -156,6 +191,8 @@ def run_turn(history: list, user_message: str, account_name: str, account_id: st
                 "tools": step_tool_names,
                 "input_tokens": response.usage.input_tokens,
                 "output_tokens": response.usage.output_tokens,
+                "cache_read_tokens": response.usage.cache_read_input_tokens or 0,
+                "cache_creation_tokens": response.usage.cache_creation_input_tokens or 0,
                 "latency_ms": latency_ms,
             }
         )
@@ -190,7 +227,7 @@ def run_turn(history: list, user_message: str, account_name: str, account_id: st
         tool_results = []
         for block in tool_use_blocks:
             if block.name == "respond":
-                respond_input = block.input
+                respond_input = _fix_double_escaped_whitespace(block.input)
                 tool_results.append(
                     {"type": "tool_result", "tool_use_id": block.id, "content": "Sent to customer."}
                 )

@@ -19,7 +19,7 @@ the fourth at all.
 **Why is this scoped to one request family instead of general customer service?**
 
 Breadth without a golden set is unfalsifiable — you can't define "correct" for an
-open-ended bot. Depth let me write 16 assertable cases instead of demoing happy paths.
+open-ended bot. Depth let me write 18 assertable cases instead of demoing happy paths.
 It also mirrors a real product tradeoff: a broad agent at 60% accuracy is worse than a
 narrow one at 95%, because one confidently wrong answer costs more trust than ten
 correct refusals. See Decision Log #2.
@@ -72,16 +72,21 @@ explain. It becomes the right call once the corpus is large, not written by whoe
 wrote the queries, or covers vocabulary customers don't share with the docs — see
 Decision Log #7.
 
-**Why `tool_choice: auto` and a `respond` tool instead of just letting it answer in
+**Why a forced `tool_choice` and a `respond` tool instead of just letting it answer in
 free text?**
 
 `respond` as a tool is what makes the evidence panel and the deterministic evals
 possible — `outcome` and `caveats` become structured fields the code and the eval
-runner can check, not adjectives buried in prose. `auto` (not forced `any`) avoids
-depending on forced-tool-choice behavior being stable across models; the cost is a
-code-level guardrail for when the model doesn't call a tool at all, which I wanted
-anyway — an ungoverned model turn should never reach the customer verbatim. See
-Decision Log #4.
+runner can check, not adjectives buried in prose. Tool choice is forced (`"any"`), not
+`"auto"` — that wasn't the first design: `"auto"` plus a prompt instruction was tried
+first specifically to avoid depending on forced-tool-choice behavior, but manual
+testing found the model breaking that contract twice, in two unrelated ways (small
+talk, then a clarifying question), both caught by a fail-closed guardrail but not
+actually correct — "escalating" a greeting to a human is a bad outcome even when
+nothing crashes. Forcing tool choice removes the failure at its source; I verified
+Sonnet 5 supports it before switching. The guardrail stays regardless — it's insurance
+against whatever the next undiscovered pattern turns out to be, not a fix for this one
+specifically. See Decision Log #4 for the full before/after account.
 
 **What happens when `get_segment` times out or the tool call fails?**
 
@@ -140,7 +145,7 @@ specifically, because it's the one that's both plausible and expensive.
 
 Prompt-driven behavior (the grounding rules, the precedence rule, the escalation
 criteria) is enforced by instructions the model could in principle drift from as models
-change or under adversarial pressure — the golden set is the safety net, but it's 16
+change or under adversarial pressure — the golden set is the safety net, but it's 18
 cases, not exhaustive. The `prompt_injection_in_data` case tests one specific
 adversarial vector (an instruction embedded in a guide's own description field) and
 passes today; I wouldn't claim it generalizes to every injection strategy.
