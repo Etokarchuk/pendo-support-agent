@@ -286,6 +286,11 @@ source really should win, in which situations) the same way a real Analytics Age
 
 ## 11. Single eval run per case, deterministic assertions, non-gating judge
 
+*(See [`EVAL_RUBRIC.md`](EVAL_RUBRIC.md) for the full rubric definition — what each
+assertion type checks, the complete judge criteria, and the calibration gap. This
+entry covers the decision to split evaluation this way; that doc covers the rubric
+itself.)*
+
 **Decision:** `evals/run_evals.py` runs each of 16 golden cases once, asserts
 structured outcomes deterministically, and only optionally adds an LLM-judge quality
 score that never gates pass/fail.

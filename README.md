@@ -185,7 +185,11 @@ python evals/run_evals.py --repeat 5 # run every case 5x, report a per-case PASS
 
 Each case makes deterministic assertions: expected `outcome`, which tools must (or
 must not) be called, required substrings, whether a specific doc must be cited, and
-whether `caveats`/`escalation_draft` are populated. See
+whether `caveats`/`escalation_draft` are populated. **See
+[`docs/EVAL_RUBRIC.md`](docs/EVAL_RUBRIC.md) for exactly what each assertion type
+checks, the full LLM-judge rubric (three dimensions, why those three, what it's
+already caught), and the honest calibration gap** — this is the single most
+important doc in the repo for the "how do you know it works" question. See
 [`docs/DECISION_LOG.md`](docs/DECISION_LOG.md) for what a production version of this
 would add (N runs per case with a pass-rate gate, a real golden-set sourcing pipeline,
 calibrating the judge against human labels).
@@ -233,5 +237,5 @@ static/index.html  chat UI with evidence panel, caveats, escalation card
 data/fixtures.json simulated account data (labeled as such)
 knowledge/*.md     9 curated product docs
 evals/             golden_cases.json + run_evals.py
-docs/              decision log, interview Q&A, video script
+docs/              decision log, eval rubric, interview Q&A, video script
 ```
