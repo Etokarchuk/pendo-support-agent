@@ -151,6 +151,7 @@ See `_contract_violation_result` in [`app/agent.py`](app/agent.py).
 | Scope boundary (billing, write requests) | No tool exists for the action + prompt instruction | Enforced by what's absent, not just by asking nicely |
 | Escalation commit | Deterministic code, human-confirmed | The only state-changing action in the whole system |
 | Runaway tool use | Hard step cap (8) | An agent needs a bound on how long it tries before a human decides, not an unbounded bill |
+| Anthropic API itself failing (rate limit, outage, timeout) | Fail closed to escalate, after the SDK's own retry budget is exhausted | A customer-facing chat turn shouldn't hang on more retries or surface a raw 500 — hand to a human fast |
 
 If you only read one part of this repo to understand the trust design, read
 [`app/prompts.py`](app/prompts.py)'s "Grounding rules" and "When data sources
@@ -162,9 +163,12 @@ checkable rather than a claim I make in a video.
 ## Evaluation
 
 ```bash
-python evals/run_evals.py          # deterministic assertions only
-python evals/run_evals.py --judge  # + non-gating LLM-judge quality score
+python evals/run_evals.py            # deterministic assertions, single run per case
+python evals/run_evals.py --judge    # + non-gating LLM-judge quality score
+python evals/run_evals.py --repeat 5 # run every case 5x, report a per-case PASS RATE
 ```
+
+`--repeat` isn't a hypothetical "production would do this" — it's a real, working measurement of run-to-run variance, because that variance showed up empirically while building this (see Decision Log #11) and a single pass/fail was the wrong way to report it.
 
 16 golden cases across four categories:
 

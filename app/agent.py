@@ -119,15 +119,32 @@ def run_turn(history: list, user_message: str, account_name: str, account_id: st
 
     for step in range(1, MAX_STEPS + 1):
         started = time.monotonic()
-        response = client.messages.create(
-            model=MODEL,
-            max_tokens=MAX_TOKENS,
-            system=system,
-            tools=TOOL_SCHEMAS,
-            tool_choice={"type": "auto"},
-            output_config={"effort": EFFORT},
-            messages=messages,
-        )
+        try:
+            response = client.messages.create(
+                model=MODEL,
+                max_tokens=MAX_TOKENS,
+                system=system,
+                tools=TOOL_SCHEMAS,
+                tool_choice={"type": "auto"},
+                output_config={"effort": EFFORT},
+                messages=messages,
+            )
+        except anthropic.APIError as exc:
+            # The SDK already retries transient failures (429/5xx/connection
+            # errors) with backoff before raising — by the time we see this,
+            # that budget is exhausted. One broad except is deliberate here,
+            # not the "catch a chain of specific types" pattern used
+            # elsewhere: every subtype gets the identical response (fail
+            # closed to a human) because a customer-facing chat turn
+            # shouldn't hang on our own additional retries for what should be
+            # a quick reply. `messages` is unchanged — nothing was appended
+            # for a call that never returned a response.
+            return TurnResult(
+                respond_input=_contract_violation_result(f"Anthropic API error: {exc}"),
+                messages=messages,
+                steps=steps,
+                tools_called=tools_called,
+            )
         latency_ms = round((time.monotonic() - started) * 1000)
 
         tool_use_blocks = [b for b in response.content if b.type == "tool_use"]

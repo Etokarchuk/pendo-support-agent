@@ -305,20 +305,41 @@ what's genuinely subjective (is the explanation clear).
 
 **Tradeoff:** a single run can't distinguish "the model is wrong" from "the model got
 unlucky this run" — real non-determinism is invisible with N=1. This isn't
-hypothetical: while building this, the judge's `over_claiming` score for the same case
-(`empty_segment_diagnosis`, unchanged code and fixtures) swung 4 → 2 → 5 across three
-consecutive runs. The 2 led me to a real fix (see below) — but the swing back to 5 on
-identical inputs is exactly the N=1 problem, and it's not only generation variance;
-the *judge's own scoring* is probabilistic too, which a production eval would need to
-account for (e.g. averaging judge scores per case, not trusting a single judge call).
-One genuine finding this did surface: the judge flagged a case (`multiple_root_causes`)
-where the model stated an unverified causal link between two independently-true
-findings ("the empty segment is consistent with the snippet outage... may resolve
-itself"), which the tool data never actually established. I tightened the system
-prompt to require independent findings be reported as independent unless a tool result
-directly links them, and confirmed the fix with a re-run (16/16 still passed, that
-case's score improved and the golden-set average over_claiming moved from 4.1 to 4.4)
-— a small, real example of the intended quality loop, not just a passing score.
+hypothetical, and building this surfaced two distinct real examples of it:
+
+1. **Generation and judge variance.** The judge's `over_claiming` score for the same
+   case (`empty_segment_diagnosis`, unchanged code and fixtures) swung 4 → 2 → 5 across
+   three consecutive clean runs. The 2 led me to inspect the transcript and led to a
+   real fix: the judge separately flagged `multiple_root_causes` for an unverified
+   causal link the model stated between two independently-true findings ("the empty
+   segment is consistent with the snippet outage... may resolve itself"), which the
+   tool data never actually established. I tightened the system prompt to require
+   independent findings be reported as independent unless a tool result directly links
+   them, and confirmed with a re-run (16/16 still passed, that case's judge score
+   improved, golden-set average `over_claiming` moved 4.1 → 4.4). That's the intended
+   quality loop actually happening, not just a passing score. Separately, the swing
+   back to 5 on identical inputs is the N=1 problem in its purest form — and it's not
+   only generation variance, the *judge's own scoring* is probabilistic too, which a
+   production eval would need to account for (e.g. averaging judge scores per case).
+2. **A real external failure, not generation noise.** Later in the same session, the
+   API key's credit balance ran out mid-testing. Pass rate degraded gradually (16/16 →
+   13/16 → 14/16 → 15/16) as calls started intermittently failing before failing
+   outright — which looked exactly like generation variance until I inspected the
+   actual failures and found `anthropic.APIError: ...credit balance is too low...`. I
+   don't want to conflate these two things: the judge-score swing above is real
+   sampling variance in the model and the judge; the later degradation was an
+   unrelated infrastructure failure. Both are real, and a single pass/fail number
+   can't tell them apart — which is exactly the point. This also ended up being an
+   unplanned, successful stress test of the fail-closed API-error guardrail added
+   after this section was first written (#4's contract-violation path, extended to
+   cover the API call itself): every failed call degraded to a clean `escalate`
+   outcome with the real cause in an internal caveat, never a raw 500 to the customer.
+
+`evals/run_evals.py --repeat N` exists specifically to make this measurable instead of
+argued about — it runs the whole golden set N times and reports a per-case pass rate,
+rather than the single-run pass/fail default. It's a small addition, not the full
+production version (no threshold gate, no run history), but it's real and running,
+not just described.
 
 **Production implication:** run each case N times, track a pass **rate**, gate on a
 threshold, investigate flaky cases individually rather than re-running until green.
