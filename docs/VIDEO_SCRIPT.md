@@ -50,21 +50,27 @@ configuration I'd have to explain secondhand. I'd reach for a framework at real
 operational complexity — durable sessions, a team sharing conventions — neither of
 which exists at this scale."
 
-### 2:00–2:40 — Architecture, in plain terms
+### 2:00–2:55 — Architecture, in plain terms
 
 [Show the README architecture diagram]
 
-"Here's the part that matters most: the model can't just reply with a paragraph of
-text. Every answer has to come back in one fixed format — a label for what actually
-happened: solved it, needs more info, or escalating. A list of the specific facts it
-used, and exactly where each one came from. And a separate field for anything it's not
-fully sure about.
+"First, the data. Everything the agent reads about an account is simulated — I don't
+have Pendo access, so I built a fixture file modeled on Pendo's real concepts. Guides,
+each with a publish status and a segment they're targeted to. Segments, each with a
+targeting rule and a live visitor count. Install status — whether the tracking
+snippet is active in an app, and which visitor fields it's actually sending. The
+agent reads this through a handful of read-only tools: look up a guide, look up its
+segment, check install status, search the product docs. There's no write tool at
+all — it can diagnose, but it can never touch a customer's actual configuration.
 
-Because that format is fixed, my code — and my tests — can actually check it: did it
-cite a real source, did it flag when the data looked shaky. Not me reading a paragraph
-and guessing whether it sounds trustworthy."
+Now the answer side. The model can't just reply with a paragraph of text — every
+answer comes back in one fixed format: a label for what happened, the specific facts
+it used and where each came from, and a field for anything it's not fully sure about.
+Because that format is fixed, my code and my tests can actually check it — did it
+cite a real source, did it flag shaky data — not me reading a paragraph and guessing
+whether it sounds trustworthy."
 
-### 2:40–3:25 — Demo 1: diagnosis with a data conflict
+### 2:55–3:40 — Demo 1: diagnosis with a data conflict
 
 [Click the example]: *"The guide page says 1,250 eligible visitors for New User
 Onboarding, so why does nobody see it?"*
@@ -78,7 +84,7 @@ doesn't just pick one, it explains why. This is the same problem an analytics ag
 hits constantly: two numbers describing the same thing, and the product has to be
 honest about which one's right, and why."
 
-### 3:25–4:35 — Demo 2: trust and guardrails
+### 3:40–4:50 — Demo 2: trust and guardrails
 
 "Three more behaviors matter as much as the diagnosis: an ambiguous question, an
 out-of-scope one, and a real dead end.
@@ -94,7 +100,7 @@ check comes back clean on this one. So it escalates, with a packet of what's alr
 been checked and what's still unresolved. I confirm it — the only state-changing
 action in the whole system. The model drafted, I approved, code created the ticket."
 
-### 4:35–5:10 — Quality
+### 4:50–5:25 — Quality
 
 [Show `python evals/run_evals.py` output]
 
@@ -105,7 +111,7 @@ situations, the harder behavior to get right. This runs once per case today; the
 honest next step is running each N times and gating on a pass rate — a single run
 can't tell 'wrong' from 'unlucky,' which I learned the hard way building this."
 
-### 5:10–5:45 — Production evolution and close
+### 5:25–6:00 — Production evolution and close
 
 "What I'd build next: a real client behind these tool interfaces, shaped so that's a
 swap not a rewrite; a deterministic check for the top cause, once trace data tells me
@@ -120,14 +126,15 @@ tools."
 
 ## Length estimate and trim guide
 
-**Narration alone is 862 words, about 5:45 at 150 words/minute — before adding the
+**Narration alone is 956 words, about 6:22 at 150 words/minute — before adding the
 demo click/wait time.** Demo 2 now has three separate exchanges (each a real API
 call, roughly 5-15 seconds), Demo 1 has one, and the escalation confirm is a fourth
 click — call it another 50-65 seconds of silent wait/click time. Realistic total
-recorded time is closer to **6:35-6:50**, meaningfully past the "4-5 minutes" target.
-This has grown from an earlier ~6:00-6:20 estimate after adding the explicit
-LangChain/framework explanation — that content was worth adding, but it means the
-cuts below now need to go a bit further to land near 5:00.
+recorded time is closer to **7:15-7:30**, well past the "4-5 minutes" target. This
+has roughly doubled from the original ~4:50 cut as content kept getting added
+(personal story, generalizing framing, framework explanation, data/tools detail) —
+each addition was worth making on its own, but the combined effect is a video that
+needs a real trim pass, not just an incremental one, before recording.
 
 If you want to land closer to 5:00, cut in this order (each keeps the video coherent
 on its own):
@@ -143,8 +150,13 @@ on its own):
 3. **Cut the Production/close section to one paragraph** — pick either "what's next"
    or the closing line, not both.
 
-Cutting #1 alone removes roughly 45-60s of real recorded time and gets you close to
-6:00. Cutting all three lands you near 5:00-5:15.
+Cutting all three above gets you to roughly **6:00**, not 5:00 — the script has
+grown enough (doubled from the original cut) that these three incremental trims no
+longer close the gap on their own. Getting back to 5:00 at this point means a real
+consolidated trim pass, not another item added to this list — if that's what you
+want, say so directly rather than asking for one more addition, and I'll cut the
+whole script down to a specific target in one pass instead of patching around the
+edges again.
 
 ## Recording notes
 
