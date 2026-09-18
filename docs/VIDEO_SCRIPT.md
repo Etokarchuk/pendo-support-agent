@@ -109,9 +109,15 @@ cases with deterministic assertions — right tool, right doc, a caveat populate
 data was stale or conflicting. Eight are specifically about ambiguous or conflicting
 situations, the harder behavior to get right. This runs once per case today; the
 honest next step is running each N times and gating on a pass rate — a single run
-can't tell 'wrong' from 'unlucky,' which I learned the hard way building this."
+can't tell 'wrong' from 'unlucky,' which I learned the hard way building this.
 
-### 5:25–6:00 — Production evolution and close
+One more honest note: I also built an optional LLM judge, to score things like
+clarity and over-claiming that don't have a single correct answer. At eighteen cases
+I didn't actually need it — reading the transcripts myself would have caught the same
+issues for free. I kept it because it's non-gating, and it's how I'd approach this at
+real production scale, once reading every conversation by hand stops being possible."
+
+### 5:45–6:20 — Production evolution and close
 
 "What I'd build next: a real client behind these tool interfaces, shaped so that's a
 swap not a rewrite; a deterministic check for the top cause, once trace data tells me
@@ -126,15 +132,17 @@ tools."
 
 ## Length estimate and trim guide
 
-**Narration alone is 956 words, about 6:22 at 150 words/minute — before adding the
+**Narration alone is 1,025 words, about 6:50 at 150 words/minute — before adding the
 demo click/wait time.** Demo 2 now has three separate exchanges (each a real API
 call, roughly 5-15 seconds), Demo 1 has one, and the escalation confirm is a fourth
 click — call it another 50-65 seconds of silent wait/click time. Realistic total
-recorded time is closer to **7:15-7:30**, well past the "4-5 minutes" target. This
-has roughly doubled from the original ~4:50 cut as content kept getting added
-(personal story, generalizing framing, framework explanation, data/tools detail) —
-each addition was worth making on its own, but the combined effect is a video that
-needs a real, deliberate trim pass before recording, not another small patch.
+recorded time is closer to **7:40-8:00**, well past the "4-5 minutes" target. This
+has grown past 1.5x the original ~4:50 cut as content kept getting added (personal
+story, generalizing framing, framework explanation, data/tools detail, the judge
+caveat) — each addition was worth making on its own, but the combined effect is a
+video that needs a real, deliberate trim pass before recording, not another small
+patch. Worth naming directly: at this length, the next request for "one more
+addition" should probably be a request to cut something instead.
 
 If you want to land closer to 5:00, cut in this order (each keeps the video coherent
 on its own):
