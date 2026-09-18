@@ -1,11 +1,13 @@
-# Video Script (4-5 minutes)
+# Video Script
 
 Tone: a senior PM explaining a product and its tradeoffs, not an engineer narrating a
-codebase. Show code only when pointing at a specific decision. ~725 words / ~4:50 of
-narration — timestamps below are guidance, not a strict script; the priority is
-leading with the customer's situation, not the artifact. The two demo sections
-involve real API calls (5-15s each), so actual recorded runtime will land a bit past
-the pure-narration estimate — that's expected, not a sign to cut more.
+codebase. Show code only when pointing at a specific decision. Plain language over
+jargon — if a line needs a technical term, explain what it does before using it.
+Timestamps are guidance, not a strict script.
+
+**Length note:** this version runs longer than the original 4-5 minute target — see
+the bottom of this file for the actual estimate and where to cut if you need to land
+closer to 5:00.
 
 ---
 
@@ -41,17 +43,21 @@ action, a real Pendo integration I don't have access to, a vector database for n
 short docs, and an agent framework — the loop's about a hundred lines, every decision
 in it mine."
 
-### 1:45–2:15 — Architecture
+### 1:45–2:25 — Architecture, in plain terms
 
 [Show the README architecture diagram]
 
-"A chat page talks to a small FastAPI server running a hand-written agent loop. Claude
-calls tools — read the guide, its segment, install status, search docs — against
-simulated account data. The only way it can answer is one structured tool call: an
-outcome, an evidence list, a caveats field. That's what makes the evidence panel, and
-my evals, possible — code can check a field, not parse adjectives."
+"Here's the part that matters most: the model can't just reply with a paragraph of
+text. Every answer has to come back in one fixed format — a label for what actually
+happened: solved it, needs more info, or escalating. A list of the specific facts it
+used, and exactly where each one came from. And a separate field for anything it's not
+fully sure about.
 
-### 2:15–3:00 — Demo 1: diagnosis with a data conflict
+Because that format is fixed, my code — and my tests — can actually check it: did it
+cite a real source, did it flag when the data looked shaky. Not me reading a paragraph
+and guessing whether it sounds trustworthy."
+
+### 2:25–3:10 — Demo 1: diagnosis with a data conflict
 
 [Click the example]: *"The guide page says 1,250 eligible visitors for New User
 Onboarding, so why does nobody see it?"*
@@ -61,24 +67,27 @@ status — the app stopped sending `plan_tier` five days ago, which the segment 
 depends on. It cites the doc for that pattern.
 
 Here's the part I care about: two numbers disagree — 1,250 at publish, 0 now — and it
-doesn't just pick one, it explains why. That's not a guide quirk — it's the same
-problem an analytics agent has every day: two numbers for 'the same' thing, and the
-product has to be honest about which one's authoritative."
+doesn't just pick one, it explains why. This is the same problem an analytics agent
+hits constantly: two numbers describing the same thing, and the product has to be
+honest about which one's right, and why."
 
-### 3:00–3:35 — Demo 2: ambiguity and escalation
+### 3:10–4:20 — Demo 2: trust and guardrails
 
-[Click]: *"my onboarding guide isn't working"*
+"Three more behaviors matter as much as the diagnosis: an ambiguous question, an
+out-of-scope one, and a real dead end.
 
-"Two guides match 'onboarding.' It doesn't guess — it asks which one."
+[Click]: *"my onboarding guide isn't working"* — two guides match. It asks which one
+instead of guessing.
 
-[Click]: *"why isn't Dashboards Launch Announcement showing to more people?"*
+[Click]: *"I want a refund for this month"* — billing isn't something this agent
+touches. It says so, without touching any account data.
 
-"Here's a guide where every check comes back clean. Correct behavior isn't inventing a
-cause — it's escalating, with a packet: what I already checked, what's unresolved. I
-confirm it — the only state-changing action in the whole system. The model drafted, I
-approved, code created the ticket. No model call in that step at all."
+[Click]: *"why isn't Dashboards Launch Announcement showing to more people?"* — every
+check comes back clean on this one. So it escalates, with a packet of what's already
+been checked and what's still unresolved. I confirm it — the only state-changing
+action in the whole system. The model drafted, I approved, code created the ticket."
 
-### 3:35–4:10 — Quality
+### 4:20–4:55 — Quality
 
 [Show `python evals/run_evals.py` output]
 
@@ -89,33 +98,50 @@ situations, the harder behavior to get right. This runs once per case today; the
 honest next step is running each N times and gating on a pass rate — a single run
 can't tell 'wrong' from 'unlucky,' which I learned the hard way building this."
 
-### 4:10–4:45 — Production evolution and close
+### 4:55–5:30 — Production evolution and close
 
 "What I'd build next: a real client behind these tool interfaces, shaped so that's a
 swap not a rewrite; a deterministic check for the top cause, once trace data tells me
-what that is; and calibrating the judge against human labels before trusting it
-beyond a score.
+what that is; and calibrating the judge against human labels before trusting it beyond
+a score.
 
-What I want this to show isn't that I can make an agent call tools — it's knowing
-which parts needed to be probabilistic, which needed a hard rule, and where that line
-sits."
+The real test here was knowing which parts needed to be probabilistic, which needed a
+hard rule, and where that line actually sits — not whether I could make an agent call
+tools."
 
 ---
+
+## Length estimate and trim guide
+
+**Narration alone is 788 words, about 5:15 at 150 words/minute — before adding the
+demo click/wait time.** Demo 2 now has three separate exchanges (each a real API
+call, roughly 5-15 seconds), Demo 1 has one, and the escalation confirm is a fourth
+click — call it another 50-65 seconds of silent wait/click time. Realistic total
+recorded time is closer to **6:00-6:20**, meaningfully past the "4-5 minutes" target.
+
+If you want to land closer to 5:00, cut in this order (each keeps the video coherent
+on its own):
+1. **Drop the billing/out-of-scope beat from Demo 2** (saves ~20s narration + a full
+   API call, ~30-45s total) — the ambiguous-question and escalation beats already
+   carry the "it doesn't guess, and it knows its limits" story; billing is the most
+   removable of the three since guardrail scope-declining is the least novel of the
+   three behaviors.
+2. **Trim the Scope Discipline beat** (1:15-1:45) down to one sentence — it's the
+   most list-like section and the least costly to shorten.
+3. **Cut the Production/close section to one paragraph** — pick either "what's next"
+   or the closing line, not both.
+
+Cutting #1 alone removes roughly 45-60s of real recorded time and gets you close to
+5:30-5:45. Cutting all three lands you near 5:00.
 
 ## Recording notes
 
 - Have the server running (`uvicorn server:app --reload`) and the page loaded before
-  recording. The page now opens with a short welcome message instead of blank — let it
-  render before you start narrating over it, or narrate the problem while it's visible
-  in the background.
-- Use the example-prompt buttons for all three demo messages (1,250 eligible visitors /
-  my onboarding guide isn't working / Dashboards Launch Announcement) so there's no live
-  typing risk.
-- Keep the evals segment to a single terminal screenshot/run — don't narrate every line
-  of output.
-- If time is tight, cut the second half of Demo 2 (the escalation confirm click) rather
-  than any of the "why" sections — the judgment is the deliverable, the click is just
-  proof it works.
-- If you're over ~5:15 in a dry run, the Scope Discipline beat (1:15–1:45) is the
-  safest place to trim further — it's the most list-like section and the least costly
-  to shorten.
+  recording. The page opens with a short welcome message instead of blank — let it
+  render before narrating over it, or narrate the problem while it's visible in the
+  background.
+- Every demo message in this script (1,250 eligible visitors / my onboarding guide
+  isn't working / I want a refund / Dashboards Launch Announcement) is a clickable
+  example button in the UI — no live typing risk.
+- Keep the evals segment to a single terminal screenshot/run — don't narrate every
+  line of output.
