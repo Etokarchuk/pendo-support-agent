@@ -133,6 +133,39 @@ def _fix_double_escaped_whitespace(value):
     return value
 
 
+def _assemble_message(respond_input: dict) -> str:
+    """Build the final customer-facing text from the model's structured fields.
+
+    This is the fix for a reliability problem, not a style preference: asking
+    the model to write '## What I checked' as literal text inside one free-form
+    `message` string was unreliable in practice — verified live, not assumed —
+    sometimes producing headers, sometimes a flat paragraph, with no schema-level
+    guarantee either way. Splitting the content into required fields
+    (`summary`, `checks`, `fix`) and having this function assemble the markdown
+    headers deterministically means the formatting can never be missing: the
+    model supplies content, code supplies structure. Same pattern already used
+    for `outcome`/`evidence`/`caveats` — this just extends it to `message`.
+    """
+    summary = respond_input.get("summary", "") or ""
+    checks = respond_input.get("checks") or []
+    fix = respond_input.get("fix")
+    outcome = respond_input.get("outcome")
+    escalation_draft = respond_input.get("escalation_draft")
+
+    parts = [summary]
+
+    if checks:
+        parts.append("## What I checked\n" + "\n".join(f"- {c}" for c in checks))
+
+    if outcome == "answered" and fix:
+        parts.append("## Fix\n" + fix)
+
+    if outcome == "escalate" and escalation_draft and escalation_draft.get("unresolved_reason"):
+        parts.append("## What's unresolved\n" + escalation_draft["unresolved_reason"])
+
+    return "\n\n".join(p for p in parts if p)
+
+
 def run_turn(history: list, user_message: str, account_name: str, account_id: str) -> TurnResult:
     """Run one customer turn to completion: send the message, execute any
     tool calls the model makes, and keep going until it calls `respond` (or a
@@ -228,6 +261,7 @@ def run_turn(history: list, user_message: str, account_name: str, account_id: st
         for block in tool_use_blocks:
             if block.name == "respond":
                 respond_input = _fix_double_escaped_whitespace(block.input)
+                respond_input["message"] = _assemble_message(respond_input)
                 tool_results.append(
                     {"type": "tool_result", "tool_use_id": block.id, "content": "Sent to customer."}
                 )

@@ -204,14 +204,14 @@ TOOL_SCHEMAS = [
                 "evidence": {
                     "type": "array",
                     "description": (
-                        "Every factual claim in `message` that came from a tool or doc "
-                        "result, with its source. Empty array only for needs_clarification "
-                        "or out_of_scope, where no facts were used. Every `source` and `fact` "
-                        "must be a real, specific value from an actual tool result you "
-                        "received this turn (an ID, a status, a count, a doc's real content) "
-                        "— never a placeholder, a generic label, or filler text of any kind. "
-                        "If you cannot name the real source and fact for a claim, do not "
-                        "include that claim in `message` either."
+                        "Every factual claim in `summary`, `checks`, or `fix` that came from "
+                        "a tool or doc result, with its source. Empty array only for "
+                        "needs_clarification or out_of_scope, where no facts were used. Every "
+                        "`source` and `fact` must be a real, specific value from an actual "
+                        "tool result you received this turn (an ID, a status, a count, a "
+                        "doc's real content), never a placeholder, a generic label, or filler "
+                        "text of any kind. If you cannot name the real source and fact for a "
+                        "claim, do not state that claim elsewhere either."
                     ),
                     "items": {
                         "type": "object",
@@ -255,31 +255,56 @@ TOOL_SCHEMAS = [
                     "required": ["summary", "guide_id", "checks_performed", "unresolved_reason"],
                     "additionalProperties": False,
                 },
-                "message": {
+                "summary": {
                     "type": "string",
                     "description": (
-                        "The customer-facing message. Plain language, no internal jargon. "
-                        "Structured, not a wall of text: for answered/escalate, use markdown "
-                        "## headers to break it into labeled sections (e.g. 'What I checked', "
-                        "'Fix' or 'What's unresolved') — see the system prompt's Message "
-                        "formatting section for the exact pattern. Never use an em dash "
-                        "character anywhere in this field, not even mid-sentence — use a "
-                        "period, comma, or colon instead. Check your draft for both of these "
-                        "before finalizing it."
+                        "One or two plain sentences, in everyday language a non-technical "
+                        "admin can follow with zero re-reading. For needs_clarification and "
+                        "out_of_scope, this is the ENTIRE customer-facing message — the "
+                        "question or the decline, nothing else. For answered/escalate, this is "
+                        "just the headline (e.g. 'Nobody sees this guide because its segment "
+                        "has 0 eligible visitors right now.') — the detail goes in `checks` "
+                        "and `fix` below, not here."
+                    ),
+                },
+                "checks": {
+                    "type": ["array", "null"],
+                    "description": (
+                        "Required (a non-empty array) for answered and escalate; null for "
+                        "needs_clarification and out_of_scope. One short, plain-English item "
+                        "per thing you checked and what you found — 'Guide status: published, "
+                        "not the issue', not a paragraph. Never show raw code, a rule "
+                        "expression, or a field name as syntax (no `visitor.region == 'EU'`) — "
+                        "translate it: 'targets EU visitors on a trial plan', not the boolean "
+                        "expression. A non-technical admin must be able to read every item "
+                        "without knowing what a boolean or a metadata field is."
+                    ),
+                    "items": {"type": "string"},
+                },
+                "fix": {
+                    "type": ["string", "null"],
+                    "description": (
+                        "Required (non-null) for answered when you found a customer-fixable "
+                        "cause. Null for needs_clarification, out_of_scope, and escalate (the "
+                        "escalate case's next step is `escalation_draft.unresolved_reason`, not "
+                        "this field — don't duplicate it here). Plain language, one or two "
+                        "sentences: what to actually do next."
                     ),
                 },
                 "outcome": {
                     "type": "string",
                     "enum": ["answered", "needs_clarification", "escalate", "out_of_scope"],
                     "description": (
-                        "Fill this in LAST, after evidence/caveats/escalation_draft/message above — "
-                        "it must be a faithful summary of what you just wrote, not a decision made "
-                        "before working through the rest. If escalation_draft is non-null, outcome "
-                        "must be 'escalate'; they can never disagree. "
+                        "Fill this in LAST, after everything else above — it must be a "
+                        "faithful summary of what you just wrote, not a decision made before "
+                        "working through the rest. If escalation_draft is non-null, outcome "
+                        "must be 'escalate'; they can never disagree. If `fix` is non-null, "
+                        "outcome must be 'answered'. "
                         "answered: you diagnosed the issue or answered a how-to question. Use "
-                        "this even when the message ALSO contains an out-of-scope ask (billing, "
-                        "or a request to change a setting) as long as it contains a real "
-                        "diagnostic question too — do the diagnosis, decline the rest inline. "
+                        "this even when the customer ALSO asked something out-of-scope (billing, "
+                        "or a request to change a setting) as long as they asked a real "
+                        "diagnostic question too — do the diagnosis, decline the rest inline in "
+                        "`fix` or `summary`. "
                         "needs_clarification: the request is ambiguous or under-specified — "
                         "you asked a question instead of guessing. "
                         "escalate: you could not resolve this with the tools available "
@@ -292,7 +317,7 @@ TOOL_SCHEMAS = [
                     ),
                 },
             },
-            "required": ["evidence", "caveats", "escalation_draft", "message", "outcome"],
+            "required": ["evidence", "caveats", "escalation_draft", "summary", "checks", "fix", "outcome"],
             "additionalProperties": False,
         },
     },
