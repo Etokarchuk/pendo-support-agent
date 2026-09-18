@@ -257,7 +257,16 @@ TOOL_SCHEMAS = [
                 },
                 "message": {
                     "type": "string",
-                    "description": "The customer-facing message. Plain language, no internal jargon.",
+                    "description": (
+                        "The customer-facing message. Plain language, no internal jargon. "
+                        "Structured, not a wall of text: for answered/escalate, use markdown "
+                        "## headers to break it into labeled sections (e.g. 'What I checked', "
+                        "'Fix' or 'What's unresolved') — see the system prompt's Message "
+                        "formatting section for the exact pattern. Never use an em dash "
+                        "character anywhere in this field, not even mid-sentence — use a "
+                        "period, comma, or colon instead. Check your draft for both of these "
+                        "before finalizing it."
+                    ),
                 },
                 "outcome": {
                     "type": "string",

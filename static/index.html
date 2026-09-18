@@ -144,6 +144,16 @@
   /* Rendered markdown inside assistant bubbles */
   .bubble .content p { margin: 0 0 10px; }
   .bubble .content p:last-child { margin-bottom: 0; }
+  .bubble .content h4 {
+    margin: 14px 0 6px;
+    font-family: "Sora", "Inter", sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--purple);
+  }
+  .bubble .content h4:first-child { margin-top: 0; }
   .bubble .content ul, .bubble .content ol { margin: 4px 0 10px; padding-left: 22px; }
   .bubble .content li { margin-bottom: 3px; }
   .bubble .content strong { color: var(--ink); font-weight: 700; }
@@ -360,10 +370,15 @@ function renderMarkdown(text) {
 
   for (const rawLine of lines) {
     const line = rawLine.trim();
+    const heading = line.match(/^#{2,3}\s+(.*)/);
     const bullet = line.match(/^[-*]\s+(.*)/);
     const numbered = line.match(/^\d+\.\s+(.*)/);
 
-    if (bullet) {
+    if (heading) {
+      flushParagraph();
+      closeList();
+      html += `<h4>${inline(heading[1])}</h4>`;
+    } else if (bullet) {
       flushParagraph();
       if (listType !== "ul") { closeList(); html += "<ul>"; listType = "ul"; }
       html += `<li>${inline(bullet[1])}</li>`;
