@@ -133,7 +133,10 @@ def _fix_double_escaped_whitespace(value):
     return value
 
 
-def _assemble_message(respond_input: dict) -> str:
+ACCOUNT_DATA_TOOLS = {"get_guide", "get_segment", "get_install_status"}
+
+
+def _assemble_message(respond_input: dict, tools_called: list) -> str:
     """Build the final customer-facing text from the model's structured fields.
 
     This is the fix for a reliability problem, not a style preference: asking
@@ -145,12 +148,22 @@ def _assemble_message(respond_input: dict) -> str:
     headers deterministically means the formatting can never be missing: the
     model supplies content, code supplies structure. Same pattern already used
     for `outcome`/`evidence`/`caveats` — this just extends it to `message`.
+
+    "Fix" vs "Solution" for the same reason: the first version keyed this off
+    whether the model populated `checks`, which turned out to be exactly the
+    same reliability trap as the headers themselves — a live test produced
+    "Fix" for a pure how-to question because the model populated `checks`
+    anyway, despite the field description saying not to. `tools_called` is
+    ground truth the code already has, not something the model can get wrong:
+    if no account-data tool ran this turn, there was nothing to diagnose, so
+    it's a how-to answer regardless of what the model put in `checks`.
     """
     summary = respond_input.get("summary", "") or ""
     checks = respond_input.get("checks") or []
     fix = respond_input.get("fix")
     outcome = respond_input.get("outcome")
     escalation_draft = respond_input.get("escalation_draft")
+    is_diagnosis = bool(ACCOUNT_DATA_TOOLS & set(tools_called))
 
     parts = [summary]
 
@@ -158,14 +171,7 @@ def _assemble_message(respond_input: dict) -> str:
         parts.append("## What I checked\n" + "\n".join(f"- {c}" for c in checks))
 
     if outcome == "answered" and fix:
-        # "Fix" implies something was broken; a pure how-to question has
-        # nothing to fix, just steps to follow. `checks` is only populated
-        # when an actual account-data diagnosis happened (see the schema
-        # description) — its absence is a reliable, code-checkable signal
-        # that this is a how-to answer, not a bug, so the header should say
-        # "Solution" instead. No new field needed; this reuses one that
-        # already carries the distinction.
-        header = "Fix" if checks else "Solution"
+        header = "Fix" if is_diagnosis else "Solution"
         parts.append(f"## {header}\n" + fix)
 
     if outcome == "escalate" and escalation_draft and escalation_draft.get("unresolved_reason"):
@@ -269,7 +275,7 @@ def run_turn(history: list, user_message: str, account_name: str, account_id: st
         for block in tool_use_blocks:
             if block.name == "respond":
                 respond_input = _fix_double_escaped_whitespace(block.input)
-                respond_input["message"] = _assemble_message(respond_input)
+                respond_input["message"] = _assemble_message(respond_input, tools_called)
                 tool_results.append(
                     {"type": "tool_result", "tool_use_id": block.id, "content": "Sent to customer."}
                 )
