@@ -30,10 +30,10 @@ a five-minute issue. That gap is what I chose to solve."
 
 ### 1:00–1:15 — Product thesis
 
-"My bet: an agent that reads the actual account data, not just a help doc,
-cross-references it against how the product actually works, and explains itself with
-evidence — resolves most of these in one pass, and hands the rest to a human already
-investigated."
+"My bet: an agent that reads the specific guide, its segment, its install status,
+cross-references that against how the product actually works, and explains itself
+with evidence — resolves most of these in one pass, and hands the rest to a human
+already investigated."
 
 ### 1:15–2:00 — Scope discipline
 
@@ -80,7 +80,7 @@ status — the app stopped sending `plan_tier` five days ago, which the segment 
 depends on. It cites the doc for that pattern.
 
 Here's the part I care about: two numbers disagree — 1,250 at publish, 0 now — and it
-doesn't just pick one, it explains why. This is the same problem an analytics agent
+explains why instead of picking one. This is the same problem an analytics agent
 hits constantly: two numbers describing the same thing, and the product has to be
 honest about which one's right, and why."
 
@@ -134,7 +134,7 @@ recorded time is closer to **7:15-7:30**, well past the "4-5 minutes" target. Th
 has roughly doubled from the original ~4:50 cut as content kept getting added
 (personal story, generalizing framing, framework explanation, data/tools detail) —
 each addition was worth making on its own, but the combined effect is a video that
-needs a real trim pass, not just an incremental one, before recording.
+needs a real, deliberate trim pass before recording, not another small patch.
 
 If you want to land closer to 5:00, cut in this order (each keeps the video coherent
 on its own):
