@@ -35,15 +35,22 @@ cross-references it against how the product actually works, and explains itself 
 evidence — resolves most of these in one pass, and hands the rest to a human already
 investigated."
 
-### 1:15–1:45 — Scope discipline
+### 1:15–2:00 — Scope discipline
 
 "I scoped this narrowly — one request family, deep, not ten done shallow, since
-breadth without a way to test correctness is unfalsifiable. I also skipped: any write
-action, a real Pendo integration I don't have access to, a vector database for nine
-short docs, and an agent framework — the loop's about a hundred lines, every decision
-in it mine."
+breadth without a way to test correctness is unfalsifiable. I also skipped a real
+Pendo integration, since I don't have access, and a vector database, since nine short
+docs don't need one.
 
-### 1:45–2:25 — Architecture, in plain terms
+One more deliberate choice: no LangChain, no LangGraph, no agent framework at all.
+The whole loop is about a hundred lines of plain code calling the Anthropic API
+directly. Every decision in it — how tool calls get forced, what happens when the
+model breaks its own contract — is something I wrote and can point to, not framework
+configuration I'd have to explain secondhand. I'd reach for a framework at real
+operational complexity — durable sessions, a team sharing conventions — neither of
+which exists at this scale."
+
+### 2:00–2:40 — Architecture, in plain terms
 
 [Show the README architecture diagram]
 
@@ -57,7 +64,7 @@ Because that format is fixed, my code — and my tests — can actually check it
 cite a real source, did it flag when the data looked shaky. Not me reading a paragraph
 and guessing whether it sounds trustworthy."
 
-### 2:25–3:10 — Demo 1: diagnosis with a data conflict
+### 2:40–3:25 — Demo 1: diagnosis with a data conflict
 
 [Click the example]: *"The guide page says 1,250 eligible visitors for New User
 Onboarding, so why does nobody see it?"*
@@ -71,7 +78,7 @@ doesn't just pick one, it explains why. This is the same problem an analytics ag
 hits constantly: two numbers describing the same thing, and the product has to be
 honest about which one's right, and why."
 
-### 3:10–4:20 — Demo 2: trust and guardrails
+### 3:25–4:35 — Demo 2: trust and guardrails
 
 "Three more behaviors matter as much as the diagnosis: an ambiguous question, an
 out-of-scope one, and a real dead end.
@@ -87,7 +94,7 @@ check comes back clean on this one. So it escalates, with a packet of what's alr
 been checked and what's still unresolved. I confirm it — the only state-changing
 action in the whole system. The model drafted, I approved, code created the ticket."
 
-### 4:20–4:55 — Quality
+### 4:35–5:10 — Quality
 
 [Show `python evals/run_evals.py` output]
 
@@ -98,7 +105,7 @@ situations, the harder behavior to get right. This runs once per case today; the
 honest next step is running each N times and gating on a pass rate — a single run
 can't tell 'wrong' from 'unlucky,' which I learned the hard way building this."
 
-### 4:55–5:30 — Production evolution and close
+### 5:10–5:45 — Production evolution and close
 
 "What I'd build next: a real client behind these tool interfaces, shaped so that's a
 swap not a rewrite; a deterministic check for the top cause, once trace data tells me
@@ -113,11 +120,14 @@ tools."
 
 ## Length estimate and trim guide
 
-**Narration alone is 788 words, about 5:15 at 150 words/minute — before adding the
+**Narration alone is 862 words, about 5:45 at 150 words/minute — before adding the
 demo click/wait time.** Demo 2 now has three separate exchanges (each a real API
 call, roughly 5-15 seconds), Demo 1 has one, and the escalation confirm is a fourth
 click — call it another 50-65 seconds of silent wait/click time. Realistic total
-recorded time is closer to **6:00-6:20**, meaningfully past the "4-5 minutes" target.
+recorded time is closer to **6:35-6:50**, meaningfully past the "4-5 minutes" target.
+This has grown from an earlier ~6:00-6:20 estimate after adding the explicit
+LangChain/framework explanation — that content was worth adding, but it means the
+cuts below now need to go a bit further to land near 5:00.
 
 If you want to land closer to 5:00, cut in this order (each keeps the video coherent
 on its own):
@@ -126,13 +136,15 @@ on its own):
    carry the "it doesn't guess, and it knows its limits" story; billing is the most
    removable of the three since guardrail scope-declining is the least novel of the
    three behaviors.
-2. **Trim the Scope Discipline beat** (1:15-1:45) down to one sentence — it's the
-   most list-like section and the least costly to shorten.
+2. **Trim the LangChain/framework paragraph in Scope Discipline** (2:00) to one
+   sentence — e.g. "No LangChain or agent framework — the loop's about a hundred
+   lines, and every decision in it is mine to explain, not framework config." Keeps
+   the point, cuts about half the paragraph.
 3. **Cut the Production/close section to one paragraph** — pick either "what's next"
    or the closing line, not both.
 
 Cutting #1 alone removes roughly 45-60s of real recorded time and gets you close to
-5:30-5:45. Cutting all three lands you near 5:00.
+6:00. Cutting all three lands you near 5:00-5:15.
 
 ## Recording notes
 
