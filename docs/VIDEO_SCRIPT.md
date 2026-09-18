@@ -5,9 +5,10 @@ codebase. Show code only when pointing at a specific decision. Plain language ov
 jargon — if a line needs a technical term, explain what it does before using it.
 Timestamps are guidance, not a strict script.
 
-**Length note:** this version runs longer than the original 4-5 minute target — see
-the bottom of this file for the actual estimate and where to cut if you need to land
-closer to 5:00.
+**Length note:** this version runs ~7:35-7:50, longer than the original 4-5 minute
+target. All four demo interactions are a deliberate, final decision to keep live —
+see the bottom of this file for the actual estimate and remaining narration-only
+trim options, which now land closer to 6:00-6:30 than 5:00.
 
 ---
 
@@ -102,14 +103,19 @@ action in the whole system. The model drafted, I approved, code created the tick
 
 ### 4:50–5:25 — Quality
 
-[Show `python evals/run_evals.py` output]
+[No live run — stay on the ticket-confirmation screen from Demo 2, or cut to a quick
+shot of `evals/golden_cases.json` in an editor. Not shown on screen: narrate only and
+point to the repo, per the decision to save the live eval run for the repo docs
+rather than screen time.]
 
 "A demo working isn't evidence a probabilistic system works. I built eighteen golden
 cases with deterministic assertions — right tool, right doc, a caveat populated when
-data was stale or conflicting. Eight are specifically about ambiguous or conflicting
-situations, the harder behavior to get right. This runs once per case today; the
-honest next step is running each N times and gating on a pass rate — a single run
-can't tell 'wrong' from 'unlucky,' which I learned the hard way building this.
+data was stale or conflicting — they're in `evals/golden_cases.json` if you want the
+exact transcripts. Eight are specifically about ambiguous or conflicting situations,
+the harder behavior to get right. This runs once per case today; the honest next step
+is running each N times and gating on a pass rate — a single run can't tell 'wrong'
+from 'unlucky,' which I learned the hard way building this. Full rubric's in
+`docs/EVAL_RUBRIC.md`.
 
 One more honest note: I also built an optional LLM judge, to score things like
 clarity and over-claiming that don't have a single correct answer. At eighteen cases
@@ -132,39 +138,35 @@ tools."
 
 ## Length estimate and trim guide
 
-**Narration alone is 1,025 words, about 6:50 at 150 words/minute — before adding the
-demo click/wait time.** Demo 2 now has three separate exchanges (each a real API
-call, roughly 5-15 seconds), Demo 1 has one, and the escalation confirm is a fourth
-click — call it another 50-65 seconds of silent wait/click time. Realistic total
-recorded time is closer to **7:40-8:00**, well past the "4-5 minutes" target. This
-has grown past 1.5x the original ~4:50 cut as content kept getting added (personal
-story, generalizing framing, framework explanation, data/tools detail, the judge
-caveat) — each addition was worth making on its own, but the combined effect is a
-video that needs a real, deliberate trim pass before recording, not another small
-patch. Worth naming directly: at this length, the next request for "one more
-addition" should probably be a request to cut something instead.
+**Spoken narration is 1,011 words, about 6:44 at 150 words/minute** — before adding
+demo click/wait time. Demo 2 has three exchanges, Demo 1 has one, and the escalation
+confirm is a fourth click — each a real API call (5-15s) — call it another 50-65
+seconds of silent wait/click time. Realistic total recorded time is **~7:35-7:50**.
 
-If you want to land closer to 5:00, cut in this order (each keeps the video coherent
-on its own):
-1. **Drop the billing/out-of-scope beat from Demo 2** (saves ~20s narration + a full
-   API call, ~30-45s total) — the ambiguous-question and escalation beats already
-   carry the "it doesn't guess, and it knows its limits" story; billing is the most
-   removable of the three since guardrail scope-declining is the least novel of the
-   three behaviors.
-2. **Trim the LangChain/framework paragraph in Scope Discipline** (2:00) to one
-   sentence — e.g. "No LangChain or agent framework — the loop's about a hundred
-   lines, and every decision in it is mine to explain, not framework config." Keeps
-   the point, cuts about half the paragraph.
-3. **Cut the Production/close section to one paragraph** — pick either "what's next"
-   or the closing line, not both.
+**Decision made: all four demo interactions stay live** — that's the actual proof
+this works, and it's the right call to protect. The evals section was moved from a
+live/screenshotted run to narration-only, pointing at `docs/EVAL_RUBRIC.md` and
+`evals/golden_cases.json` for anyone who wants the detail — the repo carries what the
+video doesn't have to.
 
-Cutting all three above gets you to roughly **6:00**, not 5:00 — the script has
-grown enough (doubled from the original cut) that these three incremental trims no
-longer close the gap on their own. Getting back to 5:00 at this point means a real
-consolidated trim pass, not another item added to this list — if that's what you
-want, say so directly rather than asking for one more addition, and I'll cut the
-whole script down to a specific target in one pass instead of patching around the
-edges again.
+With demos off the table, the only remaining lever is narration length in the
+non-demo sections:
+1. **Architecture** (201 spoken words) is now the longest non-demo section. Both
+   halves — what the data is, and the response-format explanation — could lose
+   roughly a third each without losing the point, since the full detail is already
+   in the README.
+2. **Quality** (168 spoken words) — the judge caveat and the golden-set breakdown
+   could tighten, pointing harder at the repo instead of narrating the detail live.
+3. **Scope discipline** (135 spoken words) — the LangChain paragraph could drop to
+   one sentence: "No LangChain or agent framework — the loop's about a hundred
+   lines, every decision in it mine to explain, not framework config."
+
+Trimming those three by roughly a third each saves somewhere around 60-90 seconds of
+narration — landing near **6:15-6:30** rather than 5:00. Given the demos alone (4
+live interactions, ~50-65s of wait time plus their narration) already account for a
+meaningful chunk of the runtime, 5:00 flat may no longer be realistic without cutting
+a demo — worth deciding whether ~6:00-6:30 is an acceptable final target instead of
+continuing to chase 5:00 exactly.
 
 ## Recording notes
 
@@ -174,6 +176,9 @@ edges again.
   background.
 - Every demo message in this script (1,250 eligible visitors / my onboarding guide
   isn't working / I want a refund / Dashboards Launch Announcement) is a clickable
-  example button in the UI — no live typing risk.
-- Keep the evals segment to a single terminal screenshot/run — don't narrate every
-  line of output.
+  example button in the UI — no live typing risk. All four are shown live, on
+  purpose — nothing in the demo sections is narrate-only.
+- The evals section is narrate-only, deliberately — no terminal run, no screenshot.
+  Stay on the previous screen (the ticket confirmation) while narrating it, or cut to
+  a quick shot of `evals/golden_cases.json`. The depth lives in `docs/EVAL_RUBRIC.md`
+  and `docs/DECISION_LOG.md`, not on screen.
