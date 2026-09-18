@@ -301,7 +301,7 @@
     <div class="logo-mark"></div>
     <div class="titles">
       <h1>Acme Support Assistant <span class="badge">Prototype</span></h1>
-      <p>Diagnoses why in-app guides aren't showing. All account data below is simulated, modeled on Pendo's concepts — not a real Pendo account. See README.</p>
+      <p>Diagnoses why in-app guides aren't showing. All account data below is simulated, modeled on Pendo's concepts. It's not a real Pendo account. See README.</p>
     </div>
   </header>
   <div id="examples"></div>
@@ -400,8 +400,8 @@ function renderWelcome() {
   const content = el("div", "content");
   content.innerHTML = renderMarkdown(
     "Hi, I'm the Acme Support Assistant. I diagnose why an in-app guide isn't " +
-    "showing — checking publish status, targeting segment, and install health — " +
-    "and cite the specific evidence behind every claim. If I can't resolve " +
+    "showing by checking publish status, targeting segment, and install health, " +
+    "and I cite the specific evidence behind every claim. If I can't resolve " +
     "something, I'll draft an escalation for a human instead of guessing.\n\n" +
     "Try one of the examples above, or describe what's going on with your guide."
   );
@@ -478,7 +478,7 @@ function addAssistantMessage(data) {
 
 function renderEscalationCard(draft) {
   const card = el("div", "escalation-card");
-  card.appendChild(el("h4", null, "Escalation draft — nothing sent yet"));
+  card.appendChild(el("h4", null, "Escalation draft: nothing sent yet"));
   const dl = el("dl");
   const addField = (term, value) => {
     dl.appendChild(el("dt", null, term));
@@ -501,7 +501,7 @@ function renderEscalationCard(draft) {
         body: JSON.stringify({ session_id: sessionId, escalation_draft: draft }),
       });
       const data = await res.json();
-      const confirm = el("div", "ticket-confirm", `✓ ${data.ticket_id} created — a support engineer has everything above, the customer won't repeat it.`);
+      const confirm = el("div", "ticket-confirm", `✓ ${data.ticket_id} created. A support engineer has everything above, so the customer won't repeat it.`);
       card.appendChild(confirm);
       btn.remove();
     } catch (err) {
