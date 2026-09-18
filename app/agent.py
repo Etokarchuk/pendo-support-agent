@@ -158,7 +158,15 @@ def _assemble_message(respond_input: dict) -> str:
         parts.append("## What I checked\n" + "\n".join(f"- {c}" for c in checks))
 
     if outcome == "answered" and fix:
-        parts.append("## Fix\n" + fix)
+        # "Fix" implies something was broken; a pure how-to question has
+        # nothing to fix, just steps to follow. `checks` is only populated
+        # when an actual account-data diagnosis happened (see the schema
+        # description) — its absence is a reliable, code-checkable signal
+        # that this is a how-to answer, not a bug, so the header should say
+        # "Solution" instead. No new field needed; this reuses one that
+        # already carries the distinction.
+        header = "Fix" if checks else "Solution"
+        parts.append(f"## {header}\n" + fix)
 
     if outcome == "escalate" and escalation_draft and escalation_draft.get("unresolved_reason"):
         parts.append("## What's unresolved\n" + escalation_draft["unresolved_reason"])

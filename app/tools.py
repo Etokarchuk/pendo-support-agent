@@ -270,25 +270,41 @@ TOOL_SCHEMAS = [
                 "checks": {
                     "type": ["array", "null"],
                     "description": (
-                        "Required (a non-empty array) for answered and escalate; null for "
-                        "needs_clarification and out_of_scope. One short, plain-English item "
-                        "per thing you checked and what you found — 'Guide status: published, "
-                        "not the issue', not a paragraph. Never show raw code, a rule "
-                        "expression, or a field name as syntax (no `visitor.region == 'EU'`) — "
-                        "translate it: 'targets EU visitors on a trial plan', not the boolean "
-                        "expression. A non-technical admin must be able to read every item "
-                        "without knowing what a boolean or a metadata field is."
+                        "Account-data checks only (get_guide/get_segment/get_install_status "
+                        "results) — never a doc search. Non-null and non-empty when you "
+                        "diagnosed a specific guide/segment/install issue (answered or "
+                        "escalate). Null for a pure how-to question answered from search_docs "
+                        "alone, even though that's also outcome 'answered' — there's nothing "
+                        "to list as 'checked' when no account data was involved, and this "
+                        "field's presence is exactly what distinguishes a diagnosis from a "
+                        "how-to answer. Also null for needs_clarification and out_of_scope. "
+                        "One short, plain-English item per thing you checked and what you "
+                        "found — 'Guide status: published, not the issue', not a paragraph. "
+                        "Never show raw code, a rule expression, or a field name as syntax "
+                        "(no `visitor.region == 'EU'`) — translate it: 'targets EU visitors on "
+                        "a trial plan', not the boolean expression. A non-technical admin must "
+                        "be able to read every item without knowing what a boolean or a "
+                        "metadata field is."
                     ),
                     "items": {"type": "string"},
                 },
                 "fix": {
                     "type": ["string", "null"],
                     "description": (
-                        "Required (non-null) for answered when you found a customer-fixable "
-                        "cause. Null for needs_clarification, out_of_scope, and escalate (the "
-                        "escalate case's next step is `escalation_draft.unresolved_reason`, not "
-                        "this field — don't duplicate it here). Plain language, one or two "
-                        "sentences: what to actually do next."
+                        "Required (non-null) for answered — either a customer-fixable cause "
+                        "you found, or the steps for a how-to question. Null for "
+                        "needs_clarification, out_of_scope, and escalate (the escalate case's "
+                        "next step is `escalation_draft.unresolved_reason`, not this field — "
+                        "don't duplicate it here). Plain language, describing WHAT needs to "
+                        "change and WHERE (e.g. 'in the app's visitor tracking configuration' "
+                        "or 'in the guide's Scheduling tab in the guide editor'), and state "
+                        "plainly that you can't make the change yourself. Never presume who "
+                        "the reader is or tell them to ask a specific team or person ('ask "
+                        "your engineering team', 'ask whoever manages X') — the reader might "
+                        "be the person who makes this change themselves. It's fine to state a "
+                        "real in-product permission requirement (e.g. 'this needs Admin/Editor "
+                        "access in the guide editor') since that's a fact about the system, "
+                        "not a guess about who's reading."
                     ),
                 },
                 "outcome": {

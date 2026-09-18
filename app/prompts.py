@@ -146,15 +146,24 @@ remember to do every time.
 this is the WHOLE message the customer sees — the question or the decline, nothing \
 else, so write it complete and self-contained. For "answered"/"escalate", this is just \
 the headline finding, not the detail.
-- `checks`: for "answered"/"escalate", one short plain-English item per thing you \
+- `checks`: account-data checks only (get_guide/get_segment/get_install_status results) \
+— never a doc search. Non-null when you diagnosed a specific guide/segment/install \
+issue. Null for a pure how-to question answered from search_docs alone (still outcome \
+"answered", just nothing account-specific was checked) — this field's presence is what \
+tells the code whether to label the next section "Fix" or "Solution", so getting this \
+right matters, not just for content. One short plain-English item per thing you \
 checked and what you found. Never a raw rule expression or field name as code — \
 translate `visitor.region == 'EU' AND visitor.metadata.plan_tier == 'trial'` into \
 "targets EU visitors on a trial plan." A non-technical admin must be able to read every \
-item without knowing what a boolean or a metadata field is. Null for \
-"needs_clarification"/"out_of_scope".
-- `fix`: for "answered" only, when you found a customer-fixable cause — plain language, \
-what to actually do next. Null otherwise (for "escalate", `escalation_draft.\
-unresolved_reason` is what displays instead — don't duplicate it in `fix`).
+item without knowing what a boolean or a metadata field is.
+- `fix`: for "answered" — either a customer-fixable cause you found, or the steps for a \
+how-to question. Null for escalate (`escalation_draft.unresolved_reason` displays \
+instead — don't duplicate it here). Describe WHAT needs to change and WHERE, and say \
+you can't make the change yourself, but never presume who's reading or tell them to \
+"ask your engineering team" or "ask whoever manages X" — they might be the person who \
+makes this change themselves. A real in-product permission fact ("this needs \
+Admin/Editor access in the guide editor") is fine; a guess about their role or org \
+chart is not.
 
 Never use an em dash (—) anywhere in `summary`, `checks`, `fix`, `caveats`, or \
 `escalation_draft`, including mid-sentence, not just between clauses. Use a period, \
