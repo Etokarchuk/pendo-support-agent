@@ -116,6 +116,36 @@ case's score improved and the golden-set average moved. Full account in
 something the deterministic assertions structurally can't (they check *whether* a
 claim exists, not whether it's *appropriately confident*).
 
+### Did this actually need an LLM judge? Honestly — not yet
+
+That fix is a real result, but I want to be precise about what it actually proves.
+I found the overclaiming pattern by *reading the judge's rationale text* — and I was
+already reading transcripts constantly while building this (debugging tool-choice
+violations, an outcome/schema coupling bug, an evidence-field placeholder bug — see
+`docs/DECISION_LOG.md` #4, #12). At 18 hand-authored cases, a deliberate pass of
+reading 5-10 transcripts closely would very plausibly have caught the same issue, for
+zero extra API cost. The judge didn't solve a scale problem I actually had — at this
+size, manual review is completely feasible.
+
+There's also a real confound I haven't resolved: the judge is Sonnet 5 grading Sonnet
+5's own output, a known same-model bias risk (see Calibration below), and it's
+uncalibrated, so its score is closer to "a prompt to go read this transcript" than an
+actual quality measurement — a meaningfully weaker claim than "LLM-as-judge" usually
+implies.
+
+So why keep it rather than cut it? Not present-tense necessity — **the honest reason is
+establishing the pattern ahead of the inflection point where it becomes necessary.** At
+production scale (thousands of conversations), manual review stops scaling and an LLM
+judge stops being optional; building it now, deliberately scoped as non-gating and
+honestly caveated, is a credible way to show that transition is understood rather than
+bolted on later under pressure. A fully legitimate alternative move would have been to
+skip `--judge` entirely and just write this reasoning down — "I considered an
+LLM-judge, manual review is cheaper and just as reliable at this scale, here's
+specifically when I'd add one" is arguably an equally strong signal of judgment, maybe
+stronger, since restraint backed by a clear threshold is exactly what's being evaluated
+here. Building it and keeping it clearly non-gating is the choice I made; not building
+it would have been a defensible choice too.
+
 ### Calibration — the honest gap
 
 **The judge is not calibrated against human labels, and does not gate anything as a

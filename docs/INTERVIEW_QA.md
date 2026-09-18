@@ -123,15 +123,24 @@ categories, and adversarial cases from support-agent feedback — the loop is pr
 behavior → a failure gets noticed → it's labeled and added to the set → future changes
 are evaluated against it before release → observe again.
 
-**When would you use LLM-as-judge, and how do you know the judge is right?**
+**When would you use LLM-as-judge, and how do you know the judge is right? Did you
+actually need one here?**
 
-For exactly the things that don't have an objectively checkable answer — here, that's
-explanation clarity and whether the model over-claims relative to its evidence, which
-is why `--judge` scores those and nothing else. It's non-gating in this prototype
-because I haven't calibrated it against human labels; an uncalibrated judge deciding
-pass/fail is false confidence dressed as rigor. I'd calibrate by having a person score a
-sample the judge also scored, checking agreement, and only trusting it for gating once
-that agreement is established and monitored over time.
+Honestly, not yet — and I'd say that directly rather than oversell it. At 18
+hand-authored cases, a deliberate pass of reading transcripts myself would likely have
+caught the same issue the judge caught (an unverified causal claim in
+`multiple_root_causes`), for zero extra cost; manual review is completely feasible at
+this scale. The real reason I kept it is the production story, not the prototype's
+quality bar: at real volume, manual review stops scaling and a judge stops being
+optional, so I wanted the pattern in place — scoped correctly (non-gating, only grading
+things with no objective answer: clarity, over-claiming) — before I actually needed it,
+not bolted on under pressure later. It's uncalibrated against human labels today, so a
+score is a prompt to go read a transcript, not a quality measurement on its own — I'd
+calibrate by having a person score a sample the judge also scored, checking agreement,
+and only trusting it for gating once that's established and monitored over time. I'd
+also flag the same-model bias risk (Sonnet judging Sonnet) as something to resolve in
+that same pass. A fully legitimate alternative would have been to skip it and just
+document when I'd add one — that's a real toss-up, not an obvious call.
 
 **What's your biggest customer risk?**
 
