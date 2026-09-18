@@ -5,6 +5,18 @@ point at [`DECISION_LOG.md`](DECISION_LOG.md) for the fuller argument.
 
 ---
 
+**Why Pendo specifically?**
+
+Two reasons, and I'd lead with the second one, not the first. I used Pendo in my
+product-sense interview for this role, so there's real continuity in staying in this
+domain rather than picking something unrelated. But the reason that actually matters:
+I've hit this exact problem myself as a Pendo user — set up a guide, had it not show,
+had no idea why, and ended up filing a support ticket and getting on a call with one
+of their engineers just to track down the config issue. That's firsthand customer
+pain, not a hypothetical I constructed to fit the assignment. It's also *why* I trust
+the problem framing (six independent, non-obvious causes, none visible from the guide
+editor) — I didn't invent that list, I lived a version of it.
+
 **Why does this need an LLM at all? Why not a health-check function?**
 
 For the single most common cause (draft status), a script would in fact be more

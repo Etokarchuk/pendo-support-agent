@@ -16,6 +16,14 @@ has the same shape as the role's actual problem — reasoning over authoritative
 fetched account data rather than being a chat skin over an FAQ — which is the
 strongest signal I can send about fit.
 
+Two more concrete reasons, beyond the structural argument: I've personally hit this
+exact problem as a Pendo user — set up a guide, had it not show, had no idea why, and
+ended up filing a support ticket and getting on a call with one of their engineers just
+to track down the config issue. That's real, firsthand customer pain, not a
+hypothetical I constructed for the exercise. And this is the same product I used in my
+product-sense interview for this role, so working in this domain again is a genuine
+continuation, not a coincidence dressed up as one.
+
 **Alternative considered:** DTC post-purchase support (order lookup / returns /
 refunds). Also a real problem, more universally legible in a 5-minute video, but the
 central interesting decision there is autonomy over money-adjacent writes, and most of

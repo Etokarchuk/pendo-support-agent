@@ -33,6 +33,12 @@ does it with visible evidence, explicit uncertainty, and a real escalation path.
 
 ## The problem
 
+*(Why Pendo specifically: I've hit this exact problem myself as a Pendo user — a guide
+I set up didn't show, I had no idea why, and resolving it took a support ticket and a
+call with one of their engineers. It's also the product from my product-sense
+interview for this role, so this is a genuine continuation, not a random pick. Full
+account in [`docs/DECISION_LOG.md`](docs/DECISION_LOG.md) #1.)*
+
 An admin at a company using this platform sets up an in-app "guide" (a walkthrough,
 tooltip, or announcement) targeted at a segment of their users. A day later: "nobody's
 seeing it." There are roughly six independent things that could be wrong — the guide
