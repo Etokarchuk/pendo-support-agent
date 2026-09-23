@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Acme Support Assistant (prototype)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /*
+    Visual language checked live against pendo.io (2026-09): a hot-pink/magenta
+    brand color (#DE2864 -> #FF4876), a deep-purple ink accent, a warm cream
+    background, and "Sora" as the display typeface. Colors and type are
+    inspired by that real palette; the logo mark below is an original shape
+    for "Acme," not a reproduction of Pendo's actual logo or wordmark — this
+    stays a clearly-labeled simulation, not a lookalike of the real product.
+  */
+  :root {
+    --cream: #f7f5ef;
+    --cream-dark: #efece3;
+    --card: #ffffff;
+    --border: #e6e2d6;
+    --ink: #221a2e;
+    --ink-dim: #6b6478;
+    --pink: #de2864;
+    --pink-light: #ff4876;
+    --purple: #432277;
+    --green: #1f8a58;
+    --green-bg: #e6f5ee;
+    --amber: #a5690a;
+    --amber-bg: #fbf1de;
+    --red: #c23b3b;
+    --red-bg: #fbeaea;
+    --gray: #6b6478;
+    --gray-bg: #efece3;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Inter", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  h1, h2, h3, h4, .brand-font { font-family: "Sora", "Inter", sans-serif; }
+
+  header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-mark {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--pink) 0%, var(--pink-light) 100%);
+    clip-path: polygon(0% 0%, 100% 0%, 100% 65%, 35% 65%, 35% 100%, 0% 100%);
+    border-radius: 6px 6px 0 0;
+  }
+  header .titles h1 {
+    font-size: 17px;
+    font-weight: 700;
+    margin: 0 0 2px;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  header .badge {
+    font-family: "Inter", sans-serif;
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: var(--purple);
+    color: #fff;
+  }
+  header p {
+    font-size: 12.5px;
+    color: var(--ink-dim);
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  #examples {
+    padding: 10px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    background: var(--cream-dark);
+  }
+  #examples button {
+    font-family: "Inter", sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--ink-dim);
+    border-radius: 20px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  #examples button:hover { color: var(--pink); border-color: var(--pink-light); }
+
+  #chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .msg { max-width: 720px; }
+  .msg.user { align-self: flex-end; }
+  .bubble {
+    padding: 14px 18px;
+    border-radius: 14px;
+    line-height: 1.55;
+    font-size: 14.5px;
+  }
+  .user .bubble {
+    background: linear-gradient(135deg, var(--pink) 0%, var(--pink-light) 100%);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+  .assistant .bubble {
+    background: var(--card);
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 3px rgba(34, 26, 46, 0.04);
+    border-bottom-left-radius: 4px;
+  }
+
+  /* Rendered markdown inside assistant bubbles */
+  .bubble .content p { margin: 0 0 10px; }
+  .bubble .content p:last-child { margin-bottom: 0; }
+  .bubble .content h4 {
+    margin: 14px 0 6px;
+    font-family: "Sora", "Inter", sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--purple);
+  }
+  .bubble .content h4:first-child { margin-top: 0; }
+  .bubble .content ul, .bubble .content ol { margin: 4px 0 10px; padding-left: 22px; }
+  .bubble .content li { margin-bottom: 3px; }
+  .bubble .content strong { color: var(--ink); font-weight: 700; }
+  .bubble .content code {
+    background: var(--gray-bg);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.92em;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  }
+
+  .outcome-badge {
+    display: inline-flex;
+    align-items: center;
+    font-family: "Inter", sans-serif;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+  }
+  .outcome-answered { background: var(--green-bg); color: var(--green); }
+  .outcome-needs_clarification { background: var(--amber-bg); color: var(--amber); }
+  .outcome-escalate { background: var(--red-bg); color: var(--red); }
+  .outcome-out_of_scope { background: var(--gray-bg); color: var(--gray); }
+
+  details.evidence {
+    margin-top: 10px;
+    font-size: 12.5px;
+    color: var(--ink-dim);
+  }
+  details.evidence summary {
+    cursor: pointer;
+    color: var(--purple);
+    font-weight: 600;
+    list-style: none;
+  }
+  details.evidence summary::-webkit-details-marker { display: none; }
+  details.evidence summary::before { content: "▸ "; }
+  details.evidence[open] summary::before { content: "▾ "; }
+  details.evidence ul { margin: 8px 0 0; padding-left: 4px; list-style: none; }
+  details.evidence li {
+    padding: 6px 10px;
+    background: var(--cream-dark);
+    border-radius: 8px;
+    margin-bottom: 5px;
+  }
+  details.evidence .ev-source {
+    display: block;
+    font-size: 10.5px;
+    color: var(--purple);
+    font-weight: 600;
+    margin-top: 3px;
+  }
+
+  .caveats {
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: var(--amber-bg);
+    border-left: 3px solid var(--amber);
+    border-radius: 8px;
+    font-size: 12.5px;
+    color: #5a3d09;
+  }
+  .caveats .label {
+    font-weight: 700;
+    color: var(--amber);
+    display: block;
+    margin-bottom: 4px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .caveats div { margin-top: 3px; }
+
+  .escalation-card {
+    margin-top: 12px;
+    padding: 14px 16px;
+    background: var(--red-bg);
+    border: 1px solid #f0c7c7;
+    border-radius: 10px;
+    font-size: 12.5px;
+  }
+  .escalation-card h4 {
+    margin: 0 0 10px;
+    color: var(--red);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .escalation-card dl { margin: 0; }
+  .escalation-card dt {
+    color: var(--ink-dim);
+    margin-top: 8px;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  .escalation-card dd { margin: 3px 0 0; color: var(--ink); }
+  .escalation-card button {
+    margin-top: 14px;
+    background: linear-gradient(135deg, var(--pink) 0%, var(--pink-light) 100%);
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    padding: 9px 18px;
+    font-weight: 700;
+    font-family: "Inter", sans-serif;
+    cursor: pointer;
+    font-size: 12.5px;
+    box-shadow: 0 2px 6px rgba(222, 40, 100, 0.25);
+  }
+  .escalation-card button:disabled { opacity: 0.6; cursor: default; box-shadow: none; }
+  .ticket-confirm { margin-top: 10px; color: var(--green); font-weight: 600; }
+
+  #inputRow {
+    display: flex;
+    gap: 10px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    background: var(--card);
+  }
+  #inputRow input {
+    flex: 1;
+    background: var(--cream);
+    border: 1px solid var(--border);
+    color: var(--ink);
+    padding: 12px 16px;
+    border-radius: 24px;
+    font-size: 14px;
+    font-family: "Inter", sans-serif;
+  }
+  #inputRow input:focus { outline: none; border-color: var(--pink-light); }
+  #inputRow button {
+    background: linear-gradient(135deg, var(--pink) 0%, var(--pink-light) 100%);
+    border: none;
+    color: #fff;
+    font-weight: 700;
+    font-family: "Inter", sans-serif;
+    padding: 12px 24px;
+    border-radius: 24px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(222, 40, 100, 0.3);
+  }
+  #inputRow button:disabled { opacity: 0.5; cursor: default; box-shadow: none; }
+  .thinking { color: var(--ink-dim); font-style: italic; font-size: 13.5px; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="logo-mark"></div>
+    <div class="titles">
+      <h1>Acme Support Assistant <span class="badge">Prototype</span></h1>
+      <p>Diagnoses why in-app guides aren't showing. All account data below is simulated, modeled on Pendo's concepts. It's not a real Pendo account. See README.</p>
+    </div>
+  </header>
+  <div id="examples"></div>
+  <div id="chat"></div>
+  <div id="inputRow">
+    <input id="input" type="text" placeholder="e.g. My New User Onboarding guide isn't showing for anyone" />
+    <button id="send">Send</button>
+  </div>
+
+<script>
+const EXAMPLES = [
+  "The guide page says 1,250 eligible visitors for New User Onboarding, so why does nobody see it?",
+  "my onboarding guide isn't working",
+  "why isn't Dashboards Launch Announcement showing to more people?",
+  "how do I make a guide show only once per visitor?",
+  "I want a refund for this month",
+];
+
+let sessionId = null;
+const chatEl = document.getElementById("chat");
+const inputEl = document.getElementById("input");
+const sendBtn = document.getElementById("send");
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+// Small, self-contained markdown renderer for the subset the model actually
+// produces: **bold**, paragraph breaks, and - / 1. lists. No external
+// dependency — the model's output is plain enough that a full markdown
+// library would be more code than this, and every character below is
+// HTML-escaped first, so this never introduces an injection surface.
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function renderMarkdown(text) {
+  const lines = escapeHtml(text).split("\n");
+  let html = "";
+  let listType = null; // 'ul' | 'ol' | null
+  let paragraph = [];
+
+  const flushParagraph = () => {
+    if (paragraph.length) {
+      html += `<p>${paragraph.join(" ")}</p>`;
+      paragraph = [];
+    }
+  };
+  const closeList = () => {
+    if (listType) { html += `</${listType}>`; listType = null; }
+  };
+  const inline = (s) => s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    const heading = line.match(/^#{2,3}\s+(.*)/);
+    const bullet = line.match(/^[-*]\s+(.*)/);
+    const numbered = line.match(/^\d+\.\s+(.*)/);
+
+    if (heading) {
+      flushParagraph();
+      closeList();
+      html += `<h4>${inline(heading[1])}</h4>`;
+    } else if (bullet) {
+      flushParagraph();
+      if (listType !== "ul") { closeList(); html += "<ul>"; listType = "ul"; }
+      html += `<li>${inline(bullet[1])}</li>`;
+    } else if (numbered) {
+      flushParagraph();
+      if (listType !== "ol") { closeList(); html += "<ol>"; listType = "ol"; }
+      html += `<li>${inline(numbered[1])}</li>`;
+    } else if (line === "") {
+      flushParagraph();
+      closeList();
+    } else {
+      closeList();
+      paragraph.push(inline(line));
+    }
+  }
+  flushParagraph();
+  closeList();
+  return html;
+}
+
+function renderExamples() {
+  const box = document.getElementById("examples");
+  EXAMPLES.forEach((text) => {
+    const b = el("button", null, text.length > 46 ? text.slice(0, 46) + "…" : text);
+    b.title = text;
+    b.onclick = () => { inputEl.value = text; sendMessage(); };
+    box.appendChild(b);
+  });
+}
+
+function renderWelcome() {
+  const wrap = el("div", "msg assistant");
+  const bubble = el("div", "bubble");
+  const content = el("div", "content");
+  content.innerHTML = renderMarkdown(
+    "Hi, I'm the Acme Support Assistant. I diagnose why an in-app guide isn't " +
+    "showing by checking publish status, targeting segment, and install health, " +
+    "and I cite the specific evidence behind every claim. If I can't resolve " +
+    "something, I'll draft an escalation for a human instead of guessing.\n\n" +
+    "Try one of the examples above, or describe what's going on with your guide."
+  );
+  bubble.appendChild(content);
+  wrap.appendChild(bubble);
+  chatEl.appendChild(wrap);
+}
+
+function addUserMessage(text) {
+  const wrap = el("div", "msg user");
+  const bubble = el("div", "bubble", text);
+  wrap.appendChild(bubble);
+  chatEl.appendChild(wrap);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+function addThinking() {
+  const wrap = el("div", "msg assistant");
+  wrap.id = "thinking-placeholder";
+  const bubble = el("div", "bubble thinking", "…thinking");
+  wrap.appendChild(bubble);
+  chatEl.appendChild(wrap);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+function removeThinking() {
+  const t = document.getElementById("thinking-placeholder");
+  if (t) t.remove();
+}
+
+function addAssistantMessage(data) {
+  const wrap = el("div", "msg assistant");
+  const bubble = el("div", "bubble");
+
+  const badge = el("span", "outcome-badge outcome-" + data.outcome, data.outcome.replace(/_/g, " "));
+  bubble.appendChild(badge);
+
+  const content = el("div", "content");
+  content.innerHTML = renderMarkdown(data.message || "");
+  bubble.appendChild(content);
+
+  if (data.evidence && data.evidence.length) {
+    const details = el("details", "evidence");
+    const summary = el("summary", null, `Evidence (${data.evidence.length})`);
+    details.appendChild(summary);
+    const ul = el("ul");
+    data.evidence.forEach((e) => {
+      const li = el("li");
+      li.appendChild(document.createTextNode(e.fact));
+      const src = el("span", "ev-source", e.source);
+      li.appendChild(src);
+      ul.appendChild(li);
+    });
+    details.appendChild(ul);
+    bubble.appendChild(details);
+  }
+
+  const realCaveats = (data.caveats || []).filter(c => !c.startsWith("Internal:"));
+  if (realCaveats.length) {
+    const box = el("div", "caveats");
+    box.appendChild(el("span", "label", "Data caveats"));
+    realCaveats.forEach((c) => box.appendChild(el("div", null, "• " + c)));
+    bubble.appendChild(box);
+  }
+
+  if (data.outcome === "escalate" && data.escalation_draft) {
+    bubble.appendChild(renderEscalationCard(data.escalation_draft));
+  }
+
+  wrap.appendChild(bubble);
+  chatEl.appendChild(wrap);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+function renderEscalationCard(draft) {
+  const card = el("div", "escalation-card");
+  card.appendChild(el("h4", null, "Escalation draft: nothing sent yet"));
+  const dl = el("dl");
+  const addField = (term, value) => {
+    dl.appendChild(el("dt", null, term));
+    dl.appendChild(el("dd", null, value || "—"));
+  };
+  addField("Summary", draft.summary);
+  addField("Guide", draft.guide_id);
+  addField("Checks already performed", (draft.checks_performed || []).join("; "));
+  addField("What's unresolved", draft.unresolved_reason);
+  card.appendChild(dl);
+
+  const btn = el("button", null, "Confirm escalation → create ticket");
+  btn.onclick = async () => {
+    btn.disabled = true;
+    btn.textContent = "Creating ticket…";
+    try {
+      const res = await fetch("/escalate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId, escalation_draft: draft }),
+      });
+      const data = await res.json();
+      const confirm = el("div", "ticket-confirm", `✓ ${data.ticket_id} created. A support engineer has everything above, so the customer won't repeat it.`);
+      card.appendChild(confirm);
+      btn.remove();
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = "Confirm escalation → create ticket (retry)";
+    }
+  };
+  card.appendChild(btn);
+  return card;
+}
+
+async function sendMessage() {
+  const text = inputEl.value.trim();
+  if (!text) return;
+  inputEl.value = "";
+  sendBtn.disabled = true;
+  addUserMessage(text);
+  addThinking();
+  try {
+    const res = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: sessionId, message: text }),
+    });
+    if (!res.ok) throw new Error("request failed: " + res.status);
+    const data = await res.json();
+    sessionId = data.session_id;
+    removeThinking();
+    addAssistantMessage(data);
+  } catch (err) {
+    removeThinking();
+    const wrap = el("div", "msg assistant");
+    const bubble = el("div", "bubble", "Something went wrong talking to the server: " + err.message);
+    wrap.appendChild(bubble);
+    chatEl.appendChild(wrap);
+  } finally {
+    sendBtn.disabled = false;
+    inputEl.focus();
+  }
+}
+
+sendBtn.onclick = sendMessage;
+inputEl.addEventListener("keydown", (e) => { if (e.key === "Enter") sendMessage(); });
+renderWelcome();
+renderExamples();
+inputEl.focus();
+</script>
+</body>
+</html>
