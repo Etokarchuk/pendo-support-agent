@@ -1,0 +1,12 @@
+.env
+.claude/
+__pycache__/
+*.pyc
+.venv/
+venv/
+data/tickets.json
+traces/
+*.log
+.DS_Store
+docs/VIDEO_SCRIPT.md
+docs/INTERVIEW_QA.md
